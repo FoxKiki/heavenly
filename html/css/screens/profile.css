@@ -1,0 +1,356 @@
+.profileScreen{
+  position:fixed;
+  inset:0;
+  padding:20px;
+
+  display:none;
+  flex-direction:column;
+  gap:15px;
+
+  color:white;
+
+  opacity:0;
+  transform:scale(0.985);
+  pointer-events:none;
+
+  transition:opacity 220ms ease, transform 220ms ease;
+  z-index:30;
+  overflow-y:auto;
+}
+
+.profileScreen.active{
+  display:flex;
+  opacity:1;
+  transform:scale(1);
+  pointer-events:auto;
+}
+
+.profileBackFloat{
+  position:fixed;
+  top:20px;
+  left:20px;
+  z-index:60;
+
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.15);
+  color:white;
+
+  padding:10px 12px;
+  border-radius:12px;
+  cursor:pointer;
+
+  backdrop-filter:blur(12px);
+  box-shadow:0 10px 30px rgba(0,0,0,0.55);
+}
+
+.profileContent{
+  flex:1;
+  min-height:0;
+  overflow:visible;
+}
+
+.coverBox{
+  position:relative;
+  height:300px;
+  border-radius:16px;
+  cursor:pointer;
+
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.12);
+  box-shadow:0 10px 30px rgba(0,0,0,0.35);
+
+  overflow:visible;
+}
+
+.coverBox::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:16px;
+  background:linear-gradient(135deg, rgba(124,58,237,0.55), rgba(0,0,0,0));
+  pointer-events:none;
+}
+
+.coverOverlay{
+  position:absolute;
+  inset:0;
+  border-radius:16px;
+  z-index:5;
+  pointer-events:none;
+}
+
+.coverIdentity{
+  position:absolute;
+  left:20px;
+  bottom:-40px;
+
+  display:flex;
+  align-items:center;
+  gap:14px;
+  cursor:pointer;
+
+  z-index:20;
+  pointer-events:auto;
+}
+
+.coverGear{
+  position:absolute;
+  top:14px;
+  right:14px;
+
+  display:flex;
+  align-items:flex-start;
+  justify-content:flex-end;
+
+  z-index:40;
+  pointer-events:auto;
+}
+
+.gearWrap{
+  position:relative;
+  display:flex;
+  align-items:flex-start;
+  justify-content:flex-end;
+  z-index:41;
+  pointer-events:auto;
+}
+
+.gearBtn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.profileMenu{
+  position:absolute;
+  top:calc(100% + 8px);
+  right:0;
+
+  z-index:42;
+  pointer-events:auto;
+}
+
+.profilePic{
+  width:96px;
+  height:96px;
+  border-radius:50%;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background:rgba(255,255,255,0.10);
+  border:3px solid rgba(0,0,0,0.35);
+  box-shadow:0 10px 25px rgba(0,0,0,0.35);
+
+  overflow:hidden;
+}
+
+.profilePic span{
+  font-weight:800;
+  font-size:24px;
+  color:white;
+}
+
+.profileNameWrap{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  max-width:500px;
+}
+
+.profileNameTopRow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.profileNameBig{
+  font-weight:800;
+  font-size:24px;
+}
+
+.profileSubSmall{
+  font-size:14px;
+  opacity:0.75;
+  margin-top:4px;
+}
+
+.profileStatus{
+  margin-top:8px;
+  padding:8px 14px;
+
+  font-size:15px;
+  line-height:1.35;
+  border-radius:12px;
+
+  background:rgba(0,0,0,0.35);
+  border:1px solid rgba(255,255,255,0.15);
+  backdrop-filter:blur(6px);
+
+  min-width:280px;
+  max-width:420px;
+  word-break:break-word;
+}
+
+.profileCard{
+  position:relative;
+  z-index:1;
+
+  margin-top:70px;
+  padding:24px;
+  min-height:200px;
+
+  border-radius:14px;
+
+  background:rgba(255,255,255,0.06);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.12);
+  box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+/* HOME & PROFILE SETTINGS POPUP */
+
+.homeProfilePopupBox{
+  width:min(520px, 92vw);
+}
+
+.hpField{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:12px;
+  text-align:left;
+}
+
+.hpField span{
+  font-size:13px;
+  opacity:0.85;
+}
+
+.hpField input,
+.hpField select{
+  width:100%;
+  box-sizing:border-box;
+  padding:10px 12px;
+
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.12);
+  outline:none;
+
+  background:rgba(0,0,0,0.25);
+  color:white;
+}
+
+.hpField input[type="color"]{
+  padding:6px;
+  height:44px;
+  cursor:pointer;
+}
+
+.hpActions{
+  display:flex;
+  gap:10px;
+  margin-top:16px;
+  flex-wrap:wrap;
+}
+
+.foreignProfileActions{
+  position:relative;
+  display:none;
+  pointer-events:auto;
+  z-index:35;
+}
+
+.foreignProfileGearBtn{
+  width:28px;
+  height:28px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+
+  background:rgba(255,255,255,0.10);
+  border:1px solid rgba(255,255,255,0.14);
+  color:white;
+  font-size:13px;
+
+  box-shadow:0 6px 16px rgba(0,0,0,0.28);
+  backdrop-filter:blur(8px);
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.foreignProfileGearBtn:hover{
+  background:rgba(255,255,255,0.18);
+  border-color:rgba(255,255,255,0.24);
+  transform:translateY(-1px);
+  box-shadow:0 10px 22px rgba(0,0,0,0.34);
+}
+
+.foreignProfileMenu{
+  position:absolute;
+  top:38px;
+  left:0;
+  min-width:190px;
+
+  display:none;
+  z-index:1200;
+
+  padding:10px;
+  border-radius:14px;
+
+  background:rgba(15,18,30,0.88);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.14);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.03) inset,
+    0 16px 34px rgba(0,0,0,0.42),
+    0 0 20px rgba(124,58,237,0.12);
+}
+
+.foreignProfileMenu.open{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.foreignProfileMenu button{
+  width:100%;
+  text-align:left;
+
+  display:flex;
+  align-items:center;
+  gap:8px;
+
+  padding:10px 12px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.10);
+  color:white;
+  font-size:14px;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.foreignProfileMenu button:hover{
+  background:rgba(255,255,255,0.14);
+  border-color:rgba(255,255,255,0.18);
+  transform:translateY(-1px);
+  box-shadow:0 8px 18px rgba(0,0,0,0.28);
+}

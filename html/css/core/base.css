@@ -1,0 +1,52 @@
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:black;
+}
+
+.background{
+  position:fixed;
+  inset:0;
+  background:black;
+  z-index:-2;
+}
+
+.bgLogo{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  opacity:0.95;
+  pointer-events:none;
+  z-index:0;
+  filter:
+    drop-shadow(0 0 40px rgba(0,200,255,0.35))
+    drop-shadow(0 0 80px rgba(124,58,237,0.35));
+  animation:logoFloat 6s ease-in-out infinite;
+}
+
+@keyframes logoFloat{
+  0%{ transform:scale(1) translateY(0); }
+  50%{ transform:scale(1.02) translateY(-8px); }
+  100%{ transform:scale(1) translateY(0); }
+}
+
+.screen{
+  display:none !important;
+}
+
+#loginScreen.screen.active{
+  display:flex !important;
+  flex-direction:column;
+}
+
+#homeScreen.screen.active{
+  display:flex !important;
+  flex-direction:column;
+}
+
+#profileScreen.screen.active{
+  display:flex !important;
+  flex-direction:column;
+}
