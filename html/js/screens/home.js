@@ -23,6 +23,21 @@ window.Heavenly = window.Heavenly || {};
     return String(name || "").trim().toLowerCase();
   }
 
+  function getBlockedUsers(user) {
+    if (!user || !Heavenly.storage) return [];
+
+    var settings = Heavenly.storage.getSettings(user) || {};
+    return Array.isArray(settings.blockedUsers) ? settings.blockedUsers : [];
+  }
+
+  function isBlocked(currentUser, otherUser) {
+    if (!currentUser || !otherUser) return false;
+
+    return getBlockedUsers(currentUser).some(function (entry) {
+      return normalizeName(entry) === normalizeName(otherUser);
+    });
+  }
+
   function getFriendRequests(user) {
     if (!user || !Heavenly.storage) return [];
 
@@ -44,6 +59,10 @@ window.Heavenly = window.Heavenly || {};
     if (!user || !dot) return;
 
     var requests = getFriendRequests(user);
+
+        requests = requests.filter(function (name) {
+      return !isBlocked(user, name);
+    });
 
     if (requests.length > 0) {
       dot.classList.add("active");
@@ -114,9 +133,14 @@ window.Heavenly = window.Heavenly || {};
       }
     }
 
-    var filtered = friends.filter(function (name) {
-      return String(name).toLowerCase().includes(query);
-    });
+var filtered = friends.filter(function (name) {
+
+  if (isBlocked(user, name)) {
+    return false;
+  }
+
+  return String(name).toLowerCase().includes(query);
+});
 
     if (filtered.length === 0) {
       list.innerHTML = '<div class="feedItem">Keine Freunde gefunden.</div>';
@@ -217,6 +241,11 @@ window.Heavenly = window.Heavenly || {};
     if (!user || !list) return;
 
     var requests = getFriendRequests(user);
+
+    requests = requests.filter(function (name) {
+      return !isBlocked(user, name);
+    });
+
     list.innerHTML = "";
 
     if (requests.length === 0) {
@@ -461,6 +490,7 @@ window.Heavenly = window.Heavenly || {};
     var matches = accounts.filter(function (name) {
       if (!name) return false;
       if (user && String(name).toLowerCase() === String(user).toLowerCase()) return false;
+      if (user && isBlocked(user, name)) return false;
 
       var lower = String(name).toLowerCase();
       var parts = lower.split(" ").filter(Boolean);

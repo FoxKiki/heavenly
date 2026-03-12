@@ -174,7 +174,7 @@
                 <button type="button" onclick="event.stopPropagation(); openProfileSection('avatar')">Profilbild ändern</button>
                 <button type="button" onclick="event.stopPropagation(); openProfileSection('cover')">Titelbild ändern</button>
                 <button type="button" onclick="event.stopPropagation(); openProfileSection('status')">Status ändern</button>
-                <button type="button" onclick="event.stopPropagation(); openProfileSection('privacy')">Privatsphäre</button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('blocklist')">Blockliste</button>
                 <button type="button" onclick="event.stopPropagation(); openProfileSection('deleteAccount')">Konto löschen</button>
               </div>
             </div>
@@ -267,6 +267,14 @@
     </div>
   </div>
 
+  <div id="blocklistPopup" class="popup">
+  <div class="popup-box">
+    <h2>Blockliste</h2>
+    <div id="blocklistItems"></div>
+    <button class="close" type="button" onclick="closeBlocklistPopup()">Schließen</button>
+  </div>
+</div>
+
   <div id="globalSearchPopup" class="popup">
     <div class="popup-box">
       <h2>Gefundene Profile</h2>
@@ -303,6 +311,15 @@
   </div>
 
   <div id="homeProfilePopup" class="popup">
+
+    <div id="blocklistPopup" class="popup">
+    <div class="popup-box">
+      <h2>Blockliste</h2>
+      <div id="blocklistItems"></div>
+      <button class="close" type="button" onclick="closeBlocklistPopup()">Schließen</button>
+    </div>
+  </div>
+
     <div class="popup-box homeProfilePopupBox">
       <h2>Home &amp; Profile</h2>
 

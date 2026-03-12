@@ -29,6 +29,25 @@ window.Heavenly = window.Heavenly || {};
     return String(name || "?").charAt(0).toUpperCase();
   }
 
+  function normalizeName(name) {
+    return String(name || "").trim().toLowerCase();
+  }
+
+  function getBlockedUsers(user) {
+    if (!user || !Heavenly.storage) return [];
+
+    var settings = Heavenly.storage.getSettings(user) || {};
+    return Array.isArray(settings.blockedUsers) ? settings.blockedUsers : [];
+  }
+
+  function setBlockedUsers(user, list) {
+    if (!user || !Heavenly.storage) return;
+
+    var settings = Heavenly.storage.getSettings(user) || {};
+    settings.blockedUsers = Array.isArray(list) ? list : [];
+    Heavenly.storage.setSettings(user, settings);
+  }
+
   function getPlaceholderDataUrl(type) {
     var text = type === "cover" ? "Kopfzeile" : "Profilbild";
 
@@ -366,6 +385,109 @@ window.Heavenly = window.Heavenly || {};
     }
   }
 
+  async function renderBlocklist() {
+    var currentUser = getCurrentUser();
+    var list = getEl("blocklistItems");
+
+    if (!currentUser || !list) return;
+
+    var blockedUsers = getBlockedUsers(currentUser);
+    list.innerHTML = "";
+
+    if (blockedUsers.length === 0) {
+      list.innerHTML = '<div class="feedItem">Niemand ist blockiert.</div>';
+      return;
+    }
+
+    for (var index = 0; index < blockedUsers.length; index++) {
+      var username = blockedUsers[index];
+
+      var item = document.createElement("div");
+      item.className = "requestItem";
+
+      var avatar = document.createElement("div");
+      avatar.className = "requestAvatar";
+      avatar.title = "Profil öffnen";
+
+      var avatarData = null;
+      if (Heavenly.api && Heavenly.api.getAvatar) {
+        try {
+          var avatarResult = await Heavenly.api.getAvatar(username);
+          if (avatarResult && avatarResult.ok) {
+            avatarData = avatarResult.data || null;
+          }
+        } catch (error) {
+          console.warn("Blocklist avatar load failed", error);
+        }
+      }
+
+      if (avatarData) {
+        avatar.style.backgroundImage = 'url("' + avatarData + '")';
+        avatar.style.backgroundSize = "cover";
+        avatar.style.backgroundPosition = "center";
+        avatar.style.backgroundRepeat = "no-repeat";
+        avatar.innerText = "";
+      } else {
+        avatar.innerText = getInitials(username);
+      }
+
+      avatar.onclick = (function (name) {
+        return function () {
+          window.openUserProfile(name);
+          closeBlocklistPopup();
+        };
+      })(username);
+
+      var label = document.createElement("div");
+      label.className = "requestName";
+      label.innerText = username;
+      label.title = "Profil öffnen";
+      label.onclick = (function (name) {
+        return function () {
+          window.openUserProfile(name);
+          closeBlocklistPopup();
+        };
+      })(username);
+
+      var actions = document.createElement("div");
+      actions.className = "requestActions";
+
+      var unblockBtn = document.createElement("button");
+      unblockBtn.className = "requestIconBtn";
+      unblockBtn.type = "button";
+      unblockBtn.title = "Entblocken";
+      unblockBtn.innerHTML = "↺";
+      unblockBtn.onclick = (function (name) {
+        return function () {
+          window.unblockUser(name);
+        };
+      })(username);
+
+      actions.appendChild(unblockBtn);
+
+      item.appendChild(avatar);
+      item.appendChild(label);
+      item.appendChild(actions);
+
+      list.appendChild(item);
+    }
+  }
+
+  function openBlocklistPopup() {
+    var popup = getEl("blocklistPopup");
+    if (!popup) return;
+
+    renderBlocklist();
+    popup.classList.add("active");
+  }
+
+  function closeBlocklistPopup() {
+    var popup = getEl("blocklistPopup");
+    if (!popup) return;
+
+    popup.classList.remove("active");
+  }
+
   function closeProfileMenu() {
     var menu = getEl("profileMenu");
     if (menu && Heavenly.overlay && Heavenly.overlay.close) {
@@ -535,6 +657,7 @@ window.Heavenly = window.Heavenly || {};
     closeImageViewer();
     closeStatusPopup();
     closeHomeProfilePopup();
+    closeBlocklistPopup();
 
     try {
       var result = await Heavenly.api.deleteAccount(user);
@@ -670,6 +793,8 @@ window.Heavenly = window.Heavenly || {};
 
   window.applyProfileImages = applyProfileImages;
   window.applyHomeProfileTheme = applyHomeProfileTheme;
+  window.closeBlocklistPopup = closeBlocklistPopup;
+  window.renderBlocklist = renderBlocklist;
   window.closeProfileMenu = closeProfileMenu;
   window.closeStatusPopup = closeStatusPopup;
   window.closeHomeProfilePopup = closeHomeProfilePopup;
@@ -728,6 +853,7 @@ window.Heavenly = window.Heavenly || {};
     closeStatusPopup();
     closeHomeProfilePopup();
     closeDeleteAccountPopup();
+    closeBlocklistPopup();
 
     if (Heavenly.state) {
       Heavenly.state.viewedProfileUser = null;
@@ -788,15 +914,18 @@ window.Heavenly = window.Heavenly || {};
       return;
     }
 
+    if (section === "blocklist") {
+      if (isOwnProfile()) {
+        openBlocklistPopup();
+      }
+      return;
+    }
+
     if (section === "deleteAccount") {
       if (isOwnProfile()) {
         openDeleteAccountPopup();
       }
       return;
-    }
-
-    if (typeof window.setFeedback === "function" && section === "privacy") {
-      window.setFeedback("Privatsphäre/Blockieren (kommt gleich)", true);
     }
   };
 
@@ -823,7 +952,7 @@ window.Heavenly = window.Heavenly || {};
     }
   };
 
-  window.blockViewedUser = function () {
+  window.blockViewedUser = async function () {
     var currentUser = getCurrentUser();
     var viewedUser = getViewedUser();
 
@@ -832,17 +961,106 @@ window.Heavenly = window.Heavenly || {};
     if (!currentUser || !viewedUser || currentUser === viewedUser) return;
     if (!Heavenly.storage) return;
 
-    var settings = Heavenly.storage.getSettings(currentUser) || {};
-    var blocked = Array.isArray(settings.blockedUsers) ? settings.blockedUsers : [];
+    var blocked = getBlockedUsers(currentUser);
 
-    if (!blocked.includes(viewedUser)) {
+    if (!blocked.some(function (entry) {
+      return normalizeName(entry) === normalizeName(viewedUser);
+    })) {
       blocked.push(viewedUser);
-      settings.blockedUsers = blocked;
-      Heavenly.storage.setSettings(currentUser, settings);
+      setBlockedUsers(currentUser, blocked);
     }
+
+    if (Heavenly.api && Heavenly.api.getFriends && Heavenly.api.setFriends) {
+      var currentFriendsResult = await Heavenly.api.getFriends(currentUser);
+      var viewedFriendsResult = await Heavenly.api.getFriends(viewedUser);
+
+      var currentFriends = currentFriendsResult && currentFriendsResult.ok && Array.isArray(currentFriendsResult.data)
+        ? currentFriendsResult.data
+        : [];
+
+      var viewedFriends = viewedFriendsResult && viewedFriendsResult.ok && Array.isArray(viewedFriendsResult.data)
+        ? viewedFriendsResult.data
+        : [];
+
+      currentFriends = currentFriends.filter(function (entry) {
+        return normalizeName(entry) !== normalizeName(viewedUser);
+      });
+
+      viewedFriends = viewedFriends.filter(function (entry) {
+        return normalizeName(entry) !== normalizeName(currentUser);
+      });
+
+      await Heavenly.api.setFriends(currentUser, currentFriends);
+      await Heavenly.api.setFriends(viewedUser, viewedFriends);
+    }
+
+    var currentSettings = Heavenly.storage.getSettings(currentUser) || {};
+    var viewedSettings = Heavenly.storage.getSettings(viewedUser) || {};
+
+    var currentRequests = Array.isArray(currentSettings.friendRequests) ? currentSettings.friendRequests : [];
+    var viewedRequests = Array.isArray(viewedSettings.friendRequests) ? viewedSettings.friendRequests : [];
+
+    currentSettings.friendRequests = currentRequests.filter(function (entry) {
+      return normalizeName(entry) !== normalizeName(viewedUser);
+    });
+
+    viewedSettings.friendRequests = viewedRequests.filter(function (entry) {
+      return normalizeName(entry) !== normalizeName(currentUser);
+    });
+
+    Heavenly.storage.setSettings(currentUser, currentSettings);
+    Heavenly.storage.setSettings(viewedUser, viewedSettings);
 
     if (typeof window.setFeedback === "function") {
       window.setFeedback(viewedUser + " blockiert", true);
+    }
+
+    if (Heavenly.ui && Heavenly.ui.showScreen) {
+      Heavenly.ui.showScreen("homeScreen");
+    }
+
+    if (Heavenly.state) {
+      Heavenly.state.viewedProfileUser = null;
+    }
+
+    if (typeof window.renderFriends === "function") {
+      window.renderFriends();
+    }
+
+    if (typeof window.renderFriendRequests === "function") {
+      window.renderFriendRequests();
+    }
+
+    if (typeof window.onGlobalSearch === "function") {
+      window.onGlobalSearch();
+    }
+  };
+
+  window.unblockUser = function (username) {
+    var currentUser = getCurrentUser();
+    if (!currentUser || !username) return;
+
+    var blocked = getBlockedUsers(currentUser).filter(function (entry) {
+      return normalizeName(entry) !== normalizeName(username);
+    });
+
+    setBlockedUsers(currentUser, blocked);
+    renderBlocklist();
+
+    if (typeof window.setFeedback === "function") {
+      window.setFeedback(username + " entblockt", true);
+    }
+
+    if (typeof window.onGlobalSearch === "function") {
+      window.onGlobalSearch();
+    }
+
+    if (typeof window.renderFriends === "function") {
+      window.renderFriends();
+    }
+
+    if (typeof window.renderFriendRequests === "function") {
+      window.renderFriendRequests();
     }
   };
 
