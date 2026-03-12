@@ -1,51 +1,29 @@
--- Accounts dynamisch abrufen
-RegisterNUICallback("requestAccounts", function(_, cb)
-    TriggerServerEvent("heavenly:getAccounts")
-    cb("ok")
-end)
-
 RegisterNUICallback("register", function(data, cb)
-    if data and data.username and data.password then
-        TriggerServerEvent("heavenly:register", data.username, data.password)
-    end
-    cb("ok")
+    ESX.TriggerServerCallback("heavenly:register", function(result)
+        cb(result)
+    end, data and data.username, data and data.password, data and data.passwordRepeat)
 end)
 
 RegisterNUICallback("login", function(data, cb)
-    if data and data.username and data.password then
-        TriggerServerEvent("heavenly:login", data.username, data.password)
-    end
-    cb("ok")
+    ESX.TriggerServerCallback("heavenly:login", function(result)
+        cb(result)
+    end, data and data.username, data and data.password)
 end)
 
-RegisterNetEvent("heavenly:sendAccounts")
-AddEventHandler("heavenly:sendAccounts", function(usernames)
-    SendNUIMessage({
-        action = "updateAccounts",
-        accounts = usernames
-    })
+RegisterNUICallback("logout", function(_, cb)
+    ESX.TriggerServerCallback("heavenly:logout", function(result)
+        cb(result)
+    end)
 end)
 
-RegisterNetEvent("heavenly:registerResult")
-AddEventHandler("heavenly:registerResult", function(success, message)
-    SendNUIMessage({
-        action = "registerResult",
-        success = success,
-        message = message
-    })
+RegisterNUICallback("getAccounts", function(_, cb)
+    ESX.TriggerServerCallback("heavenly:getAccounts", function(result)
+        cb(result)
+    end)
 end)
 
-RegisterNetEvent("heavenly:loginResult")
-AddEventHandler("heavenly:loginResult", function(success, message)
-    SendNUIMessage({
-        action = "loginResult",
-        success = success,
-        message = message
-    })
+RegisterNUICallback("deleteAccount", function(_, cb)
+    ESX.TriggerServerCallback("heavenly:deleteAccount", function(result)
+        cb(result)
+    end)
 end)
-
-SendNUIMessage({
-    action = "heavenly:setClock",
-    mode = "server",
-    serverTime = os.time() * 1000
-})

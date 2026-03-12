@@ -11,7 +11,7 @@ shared_script '@es_extended/imports.lua'
 
 server_scripts {
     '@mysql-async/lib/MySQL.lua',
-    'password.lua',
+    'passwort.lua',
     'account_list.lua',
     'server.lua',
     'server/api.lua'
@@ -19,7 +19,8 @@ server_scripts {
 
 client_scripts {
     'client.lua',
-    'client/nui.lua'
+    'client/nui.lua',
+    'client/lb_tablet.lua'
 }
 
 ui_page 'html/index.html'

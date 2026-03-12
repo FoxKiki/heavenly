@@ -1,5 +1,9 @@
 local uiOpen = false
 
+local function hasLbTablet()
+    return GetResourceState("lb-tablet") == "started"
+end
+
 local function setUi(state, payload)
     uiOpen = state
 
@@ -13,50 +17,37 @@ local function setUi(state, payload)
 end
 
 RegisterCommand("heavenly", function()
-    local playerData = ESX.GetPlayerData()
-    local username = nil
-
-    if playerData and playerData.name then
-        username = playerData.name
+    if hasLbTablet() then
+        return
     end
 
-    setUi(not uiOpen, {
-        username = username
-    })
+    setUi(not uiOpen, {})
 end, false)
 
 RegisterKeyMapping("heavenly", "Open Heavenly Tablet", "keyboard", "F7")
 
-RegisterNUICallback("closeUi", function(data, cb)
+RegisterNUICallback("closeUi", function(_, cb)
     setUi(false)
     cb({ ok = true })
 end)
 
-RegisterNUICallback("ping", function(data, cb)
+RegisterNUICallback("ping", function(_, cb)
     cb({
         ok = true,
         message = "pong from client"
     })
 end)
 
-RegisterNUICallback("getSession", function(data, cb)
-    local playerData = ESX.GetPlayerData()
-    local username = nil
-
-    if playerData and playerData.name then
-        username = playerData.name
-    end
-
-    cb({
-        ok = true,
-        username = username
-    })
+RegisterNUICallback("getSession", function(_, cb)
+    ESX.TriggerServerCallback("heavenly:getSession", function(result)
+        cb(result)
+    end)
 end)
 
 RegisterNUICallback("getProfile", function(data, cb)
     ESX.TriggerServerCallback("heavenly:getProfile", function(result)
         cb(result)
-    end)
+    end, data and data.username)
 end)
 
 RegisterNUICallback("saveStatus", function(data, cb)
@@ -80,7 +71,7 @@ end)
 RegisterNUICallback("getAvatar", function(data, cb)
     ESX.TriggerServerCallback("heavenly:getAvatar", function(result)
         cb(result)
-    end)
+    end, data and data.username)
 end)
 
 RegisterNUICallback("setCover", function(data, cb)
@@ -92,13 +83,13 @@ end)
 RegisterNUICallback("getCover", function(data, cb)
     ESX.TriggerServerCallback("heavenly:getCover", function(result)
         cb(result)
-    end)
+    end, data and data.username)
 end)
 
 RegisterNUICallback("getFriends", function(data, cb)
     ESX.TriggerServerCallback("heavenly:getFriends", function(result)
         cb(result)
-    end)
+    end, data and data.username)
 end)
 
 RegisterNUICallback("setFriends", function(data, cb)
@@ -107,7 +98,7 @@ RegisterNUICallback("setFriends", function(data, cb)
     end, data and data.friends or {})
 end)
 
-RegisterNUICallback("clearProfileData", function(data, cb)
+RegisterNUICallback("clearProfileData", function(_, cb)
     ESX.TriggerServerCallback("heavenly:clearProfileData", function(result)
         cb(result)
     end)
