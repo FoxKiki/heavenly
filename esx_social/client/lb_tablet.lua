@@ -1,36 +1,16 @@
-local appRegistered = false
-
-local function hasLbTablet()
-    return GetResourceState("lb-tablet") == "started"
-end
-
-local function registerTabletApp()
-    if appRegistered or not hasLbTablet() then
-        return
+-- warten bis lb-tablet gestartet ist
+CreateThread(function()
+    while GetResourceState("lb-tablet") ~= "started" do
+        Wait(500)
     end
 
-    local resourceName = GetCurrentResourceName()
-    local iconUrl = ("https://cfx-nui-%s/html/assets/logos/heavenlylogo.png"):format(resourceName)
-
-    exports["lb-tablet"]:AddCustomApp({
+    exports["lb-tablet"]:AddApp({
         identifier = "heavenly",
         name = "Heavenly",
-        description = "Social feed for your ESX characters",
+        description = "Heavenly Social Network",
         developer = "Kiki Fox",
         defaultApp = false,
-        size = 1048576,
-        ui = "html/index.html",
-        icon = iconUrl
+        size = 59812,
+        icon = "https://cfx-nui-esx_social/html/assets/logos/heavenlylogo.png"
     })
-
-    appRegistered = true
-end
-
-AddEventHandler("onClientResourceStart", function(resourceName)
-    if resourceName == "lb-tablet" or resourceName == GetCurrentResourceName() then
-        CreateThread(function()
-            Wait(500)
-            registerTabletApp()
-        end)
-    end
 end)

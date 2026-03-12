@@ -9,6 +9,10 @@ Heavenly.env.isFiveM = function () {
   return Heavenly.env.isLbTablet() || typeof window.GetParentResourceName === "function";
 };
 
+Heavenly.env.isBrowser = function () {
+  return !Heavenly.env.isFiveM();
+};
+
 Heavenly.env.getResourceName = function () {
   if (Heavenly.env.isLbTablet()) {
     return window.resourceName;
@@ -19,4 +23,13 @@ Heavenly.env.getResourceName = function () {
   }
 
   return window.GetParentResourceName();
+};
+
+Heavenly.env.closeApp = function () {
+  if (Heavenly.env.isLbTablet() && typeof window.closeApp === "function") {
+    window.closeApp();
+    return true;
+  }
+
+  return false;
 };

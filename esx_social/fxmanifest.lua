@@ -27,8 +27,10 @@ ui_page 'html/index.html'
 
 files {
     'html/index.html',
-    'html/css/*.css',
-    'html/js/*.js',
+
+    'html/css/**/*.css',
+    'html/js/**/*.js',
+
     'html/assets/**/*'
 }
 
