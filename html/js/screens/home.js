@@ -58,9 +58,7 @@ window.Heavenly = window.Heavenly || {};
     var dot = getEl("friendRequestDot");
     if (!user || !dot) return;
 
-    var requests = getFriendRequests(user);
-
-        requests = requests.filter(function (name) {
+    var requests = getFriendRequests(user).filter(function (name) {
       return !isBlocked(user, name);
     });
 
@@ -84,157 +82,157 @@ window.Heavenly = window.Heavenly || {};
     }
   }
 
-window.showHome = async function (username) {
-  var chip = getEl("userChipAvatar");
+  window.showHome = async function (username) {
+    var chip = getEl("userChipAvatar");
 
-  if (chip) {
-    chip.innerText = getInitials(username);
-    chip.style.backgroundImage = "";
-    chip.style.backgroundSize = "";
-    chip.style.backgroundPosition = "";
-    chip.style.backgroundRepeat = "";
-  }
-
-  if (Heavenly.api && Heavenly.api.getAvatar && chip) {
-    try {
-      var avatarResult = await Heavenly.api.getAvatar(username);
-
-      if (avatarResult && avatarResult.ok && avatarResult.data) {
-        chip.innerText = "";
-        chip.style.backgroundImage = 'url("' + avatarResult.data + '")';
-        chip.style.backgroundSize = "cover";
-        chip.style.backgroundPosition = "center";
-        chip.style.backgroundRepeat = "no-repeat";
-      }
-    } catch (error) {
-      console.warn("Home avatar load failed", error);
-    }
-  }
-
-  if (typeof window.applyHomeProfileTheme === "function") {
-    window.applyHomeProfileTheme();
-  }
-
-  if (Heavenly.fortune && Heavenly.fortune.init) {
-    Heavenly.fortune.init();
-  }
-
-  if (Heavenly.clock && Heavenly.clock.start) {
-    Heavenly.clock.start();
-  }
-
-  updateFriendRequestDot();
-
-  try {
-    await window.renderFriends();
-  } catch (error) {
-    console.error("renderFriends failed", error);
-  }
-};
-
-window.renderFriends = async function () {
-  var list = getEl("friendsList");
-  var user = getCurrentUser();
-
-  if (!list || !user) return;
-
-  var query = (getEl("friendSearch") ? getEl("friendSearch").value : "")
-    .trim()
-    .toLowerCase();
-
-  list.innerHTML = "";
-
-  var friends = [];
-
-  if (Heavenly.api && Heavenly.api.getFriends) {
-    var result = await Heavenly.api.getFriends(user);
-    if (result && result.ok && Array.isArray(result.data)) {
-      friends = result.data;
-    }
-  }
-
-  var filtered = friends.filter(function (name) {
-    if (isBlocked(user, name)) {
-      return false;
+    if (chip) {
+      chip.innerText = getInitials(username);
+      chip.style.backgroundImage = "";
+      chip.style.backgroundSize = "";
+      chip.style.backgroundPosition = "";
+      chip.style.backgroundRepeat = "";
     }
 
-    return String(name).toLowerCase().includes(query);
-  });
-
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="feedItem">Keine Freunde gefunden.</div>';
-    return;
-  }
-
-  for (var index = 0; index < filtered.length; index++) {
-    var name = filtered[index];
-
-    var item = document.createElement("div");
-    item.className = "friendItem";
-
-    var avatar = document.createElement("div");
-    avatar.className = "friendAvatar friendClickable";
-    avatar.innerText = getInitials(name);
-    avatar.onclick = (function (username) {
-      return function () {
-        openProfilePreview(username);
-      };
-    })(name);
-
-    if (Heavenly.api && Heavenly.api.getAvatar) {
+    if (Heavenly.api && Heavenly.api.getAvatar && chip) {
       try {
-        var avatarResult = await Heavenly.api.getAvatar(name);
+        var avatarResult = await Heavenly.api.getAvatar(username);
 
         if (avatarResult && avatarResult.ok && avatarResult.data) {
-          avatar.innerText = "";
-          avatar.style.backgroundImage = 'url("' + avatarResult.data + '")';
-          avatar.style.backgroundSize = "cover";
-          avatar.style.backgroundPosition = "center";
-          avatar.style.backgroundRepeat = "no-repeat";
+          chip.innerText = "";
+          chip.style.backgroundImage = 'url("' + avatarResult.data + '")';
+          chip.style.backgroundSize = "cover";
+          chip.style.backgroundPosition = "center";
+          chip.style.backgroundRepeat = "no-repeat";
         }
       } catch (error) {
-        console.warn("Friend avatar load failed", error);
+        console.warn("Home avatar load failed", error);
       }
     }
 
-    var meta = document.createElement("div");
-    meta.className = "friendMeta friendClickable";
-    meta.onclick = (function (username) {
-      return function () {
-        openProfilePreview(username);
-      };
-    })(name);
+    if (typeof window.applyHomeProfileTheme === "function") {
+      window.applyHomeProfileTheme();
+    }
 
-    var friendName = document.createElement("div");
-    friendName.className = "friendName";
-    friendName.innerText = name;
+    if (Heavenly.fortune && Heavenly.fortune.init) {
+      Heavenly.fortune.init();
+    }
 
-    var friendStatus = document.createElement("div");
-    friendStatus.className = "friendStatus";
-    friendStatus.innerText = "Freund";
+    if (Heavenly.clock && Heavenly.clock.start) {
+      Heavenly.clock.start();
+    }
 
-    var removeBtn = document.createElement("button");
-    removeBtn.className = "friendActionBtn";
-    removeBtn.type = "button";
-    removeBtn.title = "Freund entfernen";
-    removeBtn.innerHTML = "✖";
-    removeBtn.onclick = (function (username) {
-      return function () {
-        window.openRemoveFriendPopup(username);
-      };
-    })(name);
+    updateFriendRequestDot();
 
-    meta.appendChild(friendName);
-    meta.appendChild(friendStatus);
+    try {
+      await window.renderFriends();
+    } catch (error) {
+      console.error("renderFriends failed", error);
+    }
+  };
 
-    item.appendChild(avatar);
-    item.appendChild(meta);
-    item.appendChild(removeBtn);
+  window.renderFriends = async function () {
+    var list = getEl("friendsList");
+    var user = getCurrentUser();
 
-    list.appendChild(item);
-  }
-};
-   
+    if (!list || !user) return;
+
+    var query = (getEl("friendSearch") ? getEl("friendSearch").value : "")
+      .trim()
+      .toLowerCase();
+
+    list.innerHTML = "";
+
+    var friends = [];
+
+    if (Heavenly.api && Heavenly.api.getFriends) {
+      var result = await Heavenly.api.getFriends(user);
+      if (result && result.ok && Array.isArray(result.data)) {
+        friends = result.data;
+      }
+    }
+
+    var filtered = friends.filter(function (name) {
+      if (isBlocked(user, name)) {
+        return false;
+      }
+
+      return String(name).toLowerCase().includes(query);
+    });
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="feedItem">Keine Freunde gefunden.</div>';
+      return;
+    }
+
+    for (var index = 0; index < filtered.length; index++) {
+      var name = filtered[index];
+
+      var item = document.createElement("div");
+      item.className = "friendItem";
+
+      var avatar = document.createElement("div");
+      avatar.className = "friendAvatar friendClickable";
+      avatar.innerText = getInitials(name);
+      avatar.onclick = (function (username) {
+        return function () {
+          openProfilePreview(username);
+        };
+      })(name);
+
+      if (Heavenly.api && Heavenly.api.getAvatar) {
+        try {
+          var avatarResult = await Heavenly.api.getAvatar(name);
+
+          if (avatarResult && avatarResult.ok && avatarResult.data) {
+            avatar.innerText = "";
+            avatar.style.backgroundImage = 'url("' + avatarResult.data + '")';
+            avatar.style.backgroundSize = "cover";
+            avatar.style.backgroundPosition = "center";
+            avatar.style.backgroundRepeat = "no-repeat";
+          }
+        } catch (error) {
+          console.warn("Friend avatar load failed", error);
+        }
+      }
+
+      var meta = document.createElement("div");
+      meta.className = "friendMeta friendClickable";
+      meta.onclick = (function (username) {
+        return function () {
+          openProfilePreview(username);
+        };
+      })(name);
+
+      var friendName = document.createElement("div");
+      friendName.className = "friendName";
+      friendName.innerText = name;
+
+      var friendStatus = document.createElement("div");
+      friendStatus.className = "friendStatus";
+      friendStatus.innerText = "Freund";
+
+      var removeBtn = document.createElement("button");
+      removeBtn.className = "friendActionBtn";
+      removeBtn.type = "button";
+      removeBtn.title = "Freund entfernen";
+      removeBtn.innerHTML = "✖";
+      removeBtn.onclick = (function (username) {
+        return function () {
+          window.openRemoveFriendPopup(username);
+        };
+      })(name);
+
+      meta.appendChild(friendName);
+      meta.appendChild(friendStatus);
+
+      item.appendChild(avatar);
+      item.appendChild(meta);
+      item.appendChild(removeBtn);
+
+      list.appendChild(item);
+    }
+  };
+
   window.addDemoFriends = async function () {
     var user = getCurrentUser();
     if (!user) return;
@@ -274,9 +272,7 @@ window.renderFriends = async function () {
     var list = getEl("friendRequestsList");
     if (!user || !list) return;
 
-    var requests = getFriendRequests(user);
-
-    requests = requests.filter(function (name) {
+    var requests = getFriendRequests(user).filter(function (name) {
       return !isBlocked(user, name);
     });
 
@@ -476,16 +472,16 @@ window.renderFriends = async function () {
   };
 
   window.openGlobalSearchPopup = function () {
-    var popup = getEl("globalSearchPopup");
-    if (popup) {
-      popup.classList.add("active");
+    var dropdown = getEl("globalSearchDropdown");
+    if (dropdown) {
+      dropdown.classList.add("open");
     }
   };
 
   window.closeGlobalSearchPopup = function () {
-    var popup = getEl("globalSearchPopup");
-    if (popup) {
-      popup.classList.remove("active");
+    var dropdown = getEl("globalSearchDropdown");
+    if (dropdown) {
+      dropdown.classList.remove("open");
     }
   };
 
@@ -521,7 +517,7 @@ window.renderFriends = async function () {
       });
     }
 
-    var matches = accounts.filter(function (name) {
+    var userMatches = accounts.filter(function (name) {
       if (!name) return false;
       if (user && String(name).toLowerCase() === String(user).toLowerCase()) return false;
       if (user && isBlocked(user, name)) return false;
@@ -529,67 +525,122 @@ window.renderFriends = async function () {
       var lower = String(name).toLowerCase();
       var parts = lower.split(" ").filter(Boolean);
 
-      if (lower.startsWith(query)) {
+      if (lower.includes(query)) {
         return true;
       }
 
       return parts.some(function (part) {
         return part.startsWith(query);
       });
-    });
+    }).slice(0, 6);
 
     list.innerHTML = "";
 
-    if (matches.length === 0) {
-      list.innerHTML = '<div class="feedItem">Keine Profile gefunden.</div>';
-      window.openGlobalSearchPopup();
-      return query;
+    if (query.startsWith("#")) {
+      var tag = query.replace(/^#+/, "").trim();
+
+      if (tag) {
+        var tagTitle = document.createElement("div");
+        tagTitle.className = "searchSectionTitle";
+        tagTitle.innerText = "Hashtags";
+        list.appendChild(tagTitle);
+
+        var tagItem = document.createElement("div");
+        tagItem.className = "searchResultItem";
+        tagItem.onclick = function () {
+          if (typeof window.setFeedback === "function") {
+            window.setFeedback("Hashtag-Suche für #" + tag + " kommt gleich 😊", true);
+          }
+          window.closeGlobalSearchPopup();
+        };
+
+        var tagAvatar = document.createElement("div");
+        tagAvatar.className = "searchResultAvatar";
+        tagAvatar.innerText = "#";
+
+        var tagMeta = document.createElement("div");
+        tagMeta.className = "searchResultMeta";
+
+        var tagName = document.createElement("div");
+        tagName.className = "searchResultName";
+        tagName.innerText = "#" + tag;
+
+        var tagSub = document.createElement("div");
+        tagSub.className = "searchResultSub";
+        tagSub.innerText = "Nach Beiträgen mit diesem Hashtag suchen";
+
+        tagMeta.appendChild(tagName);
+        tagMeta.appendChild(tagSub);
+
+        tagItem.appendChild(tagAvatar);
+        tagItem.appendChild(tagMeta);
+
+        list.appendChild(tagItem);
+        window.openGlobalSearchPopup();
+        return query;
+      }
     }
 
-    for (var index = 0; index < matches.length; index++) {
-      var name = matches[index];
+    if (userMatches.length > 0) {
+      var peopleTitle = document.createElement("div");
+      peopleTitle.className = "searchSectionTitle";
+      peopleTitle.innerText = "Personen";
+      list.appendChild(peopleTitle);
 
-      var item = document.createElement("div");
-      item.className = "searchResultItem";
-      item.onclick = (function (username) {
-        return function () {
-          openProfilePreview(username);
-        };
-      })(name);
+      for (var index = 0; index < userMatches.length; index++) {
+        var name = userMatches[index];
 
-      var avatar = document.createElement("div");
-      avatar.className = "searchResultAvatar";
+        var item = document.createElement("div");
+        item.className = "searchResultItem";
+        item.onclick = (function (username) {
+          return function () {
+            openProfilePreview(username);
+            window.closeGlobalSearchPopup();
+          };
+        })(name);
 
-      var avatarData = null;
-      if (Heavenly.api && Heavenly.api.getAvatar) {
-        try {
-          var avatarResult = await Heavenly.api.getAvatar(name);
-          if (avatarResult && avatarResult.ok) {
-            avatarData = avatarResult.data || null;
-          }
-        } catch (error) {
-          console.warn("Avatar search load failed", error);
-        }
-      }
-
-      if (avatarData) {
-        avatar.style.backgroundImage = 'url("' + avatarData + '")';
-        avatar.style.backgroundSize = "cover";
-        avatar.style.backgroundPosition = "center";
-        avatar.style.backgroundRepeat = "no-repeat";
-        avatar.innerText = "";
-      } else {
+        var avatar = document.createElement("div");
+        avatar.className = "searchResultAvatar";
         avatar.innerText = getInitials(name);
+
+        if (Heavenly.api && Heavenly.api.getAvatar) {
+          try {
+            var avatarResult = await Heavenly.api.getAvatar(name);
+            if (avatarResult && avatarResult.ok && avatarResult.data) {
+              avatar.innerText = "";
+              avatar.style.backgroundImage = 'url("' + avatarResult.data + '")';
+              avatar.style.backgroundSize = "cover";
+              avatar.style.backgroundPosition = "center";
+              avatar.style.backgroundRepeat = "no-repeat";
+            }
+          } catch (error) {
+            console.warn("Avatar search load failed", error);
+          }
+        }
+
+        var meta = document.createElement("div");
+        meta.className = "searchResultMeta";
+
+        var label = document.createElement("div");
+        label.className = "searchResultName";
+        label.innerText = name;
+
+        var sub = document.createElement("div");
+        sub.className = "searchResultSub";
+        sub.innerText = "Profil öffnen";
+
+        meta.appendChild(label);
+        meta.appendChild(sub);
+
+        item.appendChild(avatar);
+        item.appendChild(meta);
+
+        list.appendChild(item);
       }
+    }
 
-      var label = document.createElement("div");
-      label.className = "searchResultName";
-      label.innerText = name;
-
-      item.appendChild(avatar);
-      item.appendChild(label);
-
-      list.appendChild(item);
+    if (userMatches.length === 0 && !query.startsWith("#")) {
+      list.innerHTML = '<div class="searchEmpty">Keine passenden Nutzer gefunden.</div>';
     }
 
     window.openGlobalSearchPopup();
@@ -615,4 +666,15 @@ window.renderFriends = async function () {
       window.setFeedback("News kommt gleich 😊", true);
     }
   };
+
+  document.addEventListener("click", function (event) {
+    var wrap = document.querySelector(".globalSearchWrap");
+    var dropdown = getEl("globalSearchDropdown");
+
+    if (!wrap || !dropdown) return;
+
+    if (!wrap.contains(event.target)) {
+      window.closeGlobalSearchPopup();
+    }
+  });
 })();

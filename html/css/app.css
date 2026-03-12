@@ -52,10 +52,6 @@ body{
   flex-direction:column;
 }
 
-/* html/css/core/layout.css */
-
-/* html/css/core/theme.css */
-
 /* html/css/screens/login.css */
 .main-box{
   position:fixed;
@@ -161,9 +157,10 @@ body{
   color:white;
 }
 
-/* Header */
-
 .homeHeader{
+  position:relative;
+  z-index:50;
+
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -178,7 +175,7 @@ body{
 }
 
 .homeLeft{
-  flex:1;
+  flex:0 0 auto;
   display:flex;
   align-items:center;
   gap:10px;
@@ -189,17 +186,18 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
+  overflow:visible;
+  padding:0 18px;
 }
 
 .homeRight{
-  flex:1;
+  flex:0 0 auto;
   display:flex;
   align-items:center;
   justify-content:flex-end;
   gap:12px;
+  min-width:580px;
 }
-
-/* Buttons */
 
 .homeAvatarBtn{
   background:transparent;
@@ -248,27 +246,92 @@ body{
   background:rgba(255,255,255,0.15);
 }
 
-/* Search */
+.globalSearchWrap{
+  position:relative;
+  width:420px;
+  max-width:42vw;
+  z-index:10000;
+}
 
 .globalSearch{
-  width:260px;
-  max-width:36vw;
+  width:100%;
   box-sizing:border-box;
 
-  padding:9px 12px;
-  border-radius:12px;
+  padding:12px 14px 12px 42px;
+  border-radius:999px;
   border:1px solid rgba(255,255,255,0.10);
   outline:none;
 
-  background:rgba(0,0,0,0.25);
+  background:rgba(0,0,0,0.22);
   color:white;
+  font-size:14px;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.globalSearchBar{
+  position:relative;
+  width:100%;
+}
+
+.globalSearchIcon{
+  position:absolute;
+  left:14px;
+  top:50%;
+  transform:translateY(-50%);
+  pointer-events:none;
+  color:rgba(255,255,255,0.58);
+  font-size:14px;
+  line-height:1;
+}
+
+.globalSearch:focus{
+  background:rgba(0,0,0,0.32);
+  border-color:rgba(255,255,255,0.18);
+  box-shadow:0 0 0 3px rgba(124,58,237,0.12);
 }
 
 .globalSearch::placeholder{
   color:rgba(255,255,255,0.55);
 }
 
-/* Logout */
+.globalSearchDropdown{
+  position:absolute;
+  top:calc(100% + 8px);
+  left:0;
+  width:100%;
+
+  display:none;
+  z-index:9999;
+
+  padding:8px;
+  border-radius:18px;
+
+  background:rgba(15,18,30,0.96);
+  backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,0.12);
+  box-shadow:0 18px 38px rgba(0,0,0,0.45);
+}
+
+.globalSearchDropdown.open{
+  display:block;
+}
+
+.globalSearchResults{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.searchEmpty{
+  padding:12px;
+  border-radius:12px;
+  color:rgba(255,255,255,0.75);
+  font-size:14px;
+  background:rgba(255,255,255,0.04);
+}
 
 .logoutBtn{
   padding:10px 14px;
@@ -285,16 +348,15 @@ body{
   transform:scale(1.04);
 }
 
-/* Layout */
-
 .homeContent{
+  position:relative;
+  z-index:1;
+
   display:flex;
   flex:1;
   gap:15px;
   min-height:0;
 }
-
-/* Cards */
 
 .feedBox,
 .usersBox{
@@ -318,8 +380,6 @@ body{
   overflow-y:auto;
 }
 
-/* Feed */
-
 .feedItem{
   margin-top:10px;
   padding:10px;
@@ -328,8 +388,6 @@ body{
   background:rgba(0,0,0,0.25);
   border:1px solid rgba(255,255,255,0.08);
 }
-
-/* Friend search */
 
 .searchInput{
   width:100%;
@@ -348,8 +406,6 @@ body{
   color:rgba(255,255,255,0.55);
 }
 
-/* Avatar */
-
 .userChipAvatar{
   width:30px;
   height:30px;
@@ -365,9 +421,12 @@ body{
   color:white;
   font-weight:700;
   font-size:14px;
-}
 
-/* Friends */
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  overflow:hidden;
+}
 
 .friendItem{
   display:flex;
@@ -396,11 +455,17 @@ body{
 
   color:white;
   font-weight:600;
+
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  overflow:hidden;
 }
 
 .friendMeta{
   display:flex;
   flex-direction:column;
+  min-width:0;
 }
 
 .friendName{
@@ -412,18 +477,6 @@ body{
   font-size:12px;
   opacity:0.7;
 }
-
-.statusDot{
-  width:8px;
-  height:8px;
-  margin-left:auto;
-  border-radius:50%;
-
-  background:rgba(0,255,0,0.8);
-  box-shadow:0 0 10px rgba(0,255,0,0.25);
-}
-
-/* Friends toolbar */
 
 .friendsToolbar{
   display:flex;
@@ -483,8 +536,6 @@ body{
 .requestDot.active{
   display:block;
 }
-
-/* Friend request items */
 
 .requestItem{
   display:flex;
@@ -554,10 +605,11 @@ body{
   background:rgba(255,255,255,0.15);
 }
 
-/* Fortune */
-
 .fortuneBox{
   width:380px;
+  min-width:380px;
+  max-width:380px;
+  box-sizing:border-box;
   padding:8px 14px;
   border-radius:12px;
 
@@ -587,12 +639,16 @@ body{
   white-space:nowrap;
 }
 
-/* Clock */
-
 .clockBox{
+  width:92px;
+  min-width:92px;
+  max-width:92px;
+  box-sizing:border-box;
+
   display:flex;
   flex-direction:column;
-  align-items:flex-end;
+  align-items:center;
+  justify-content:center;
 
   padding:4px 6px;
   border-radius:10px;
@@ -606,14 +662,21 @@ body{
   font-size:18px;
   font-weight:700;
   color:white;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum";
+  text-align:center;
 }
 
 .clockDate{
+  margin-top:3px;
   font-size:12px;
   opacity:0.7;
+  line-height:1.1;
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum";
+  text-align:center;
 }
-
-/* Friend remove button */
 
 .friendActionBtn{
   width:32px;
@@ -648,24 +711,30 @@ body{
   flex-wrap:wrap;
 }
 
-/* Global search result items */
+.searchSectionTitle{
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  opacity:0.7;
+  margin:2px 2px 4px;
+}
 
 .searchResultItem{
   display:flex;
   align-items:center;
   gap:10px;
 
-  margin-top:10px;
   padding:10px;
   border-radius:12px;
 
-  background:rgba(0,0,0,0.25);
+  background:rgba(255,255,255,0.06);
   border:1px solid rgba(255,255,255,0.08);
   cursor:pointer;
 }
 
 .searchResultItem:hover{
-  background:rgba(255,255,255,0.10);
+  background:rgba(255,255,255,0.12);
 }
 
 .searchResultAvatar{
@@ -683,6 +752,17 @@ body{
   color:white;
   font-weight:700;
   flex:0 0 36px;
+
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  overflow:hidden;
+}
+
+.searchResultMeta{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
 }
 
 .searchResultName{
@@ -691,6 +771,20 @@ body{
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+}
+
+.searchResultSub{
+  font-size:12px;
+  opacity:0.7;
+}
+
+.searchEmpty{
+  padding:10px;
+  border-radius:12px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.08);
+  font-size:13px;
+  opacity:0.8;
 }
 
 /* html/css/screens/profile.css */
@@ -905,8 +999,6 @@ body{
   box-shadow:0 10px 30px rgba(0,0,0,0.45);
 }
 
-/* HOME & PROFILE SETTINGS POPUP */
-
 .homeProfilePopupBox{
   width:min(520px, 92vw);
 }
@@ -1094,6 +1186,7 @@ body{
   opacity:1 !important;
   visibility:visible !important;
 }
+
 .popup-box h2{
   margin:0 0 18px 0 !important;
   text-align:center !important;
@@ -1151,8 +1244,6 @@ body{
 }
 
 /* html/css/components/gear.css */
-/* gear.css – Werkzeugmenü unter dem Profilbild */
-
 .gearWrap{
   position:relative;
   z-index:50;
@@ -1224,8 +1315,6 @@ body{
 }
 
 /* html/css/components/imageviewer.css */
-/* imageviewer.css – Lightbox für Bilder */
-
 .imageViewer{
   position:fixed;
   inset:0;
@@ -1275,8 +1364,3 @@ body{
   max-height:88vh;
   object-fit:contain;
 }
-
-/* html/css/components/fortune.css */
-
-/* html/css/components/dm.css */
-
