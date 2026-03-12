@@ -152,7 +152,7 @@ ESX.RegisterServerCallback("heavenly:getSession", function(source, cb)
     })
 end)
 
-ESX.RegisterServerCallback("heavenly:getAccounts", function(source, cb)
+ESX.RegisterServerCallback("heavenly:getAccounts", function(_, cb)
     AccountList.getAccounts(function(usernames)
         cb({
             ok = true,
@@ -176,10 +176,16 @@ ESX.RegisterServerCallback("heavenly:deleteAccount", function(source, cb)
             return
         end
 
-        MySQL.Async.execute("DELETE FROM heavenly_profiles WHERE identifier = @identifier", {
+        MySQL.Async.execute([[
+            DELETE FROM heavenly_profiles
+            WHERE identifier = @identifier
+        ]], {
             ["@identifier"] = account.identifier
         }, function()
-            MySQL.Async.execute("DELETE FROM heavenly_accounts WHERE LOWER(username) = LOWER(@username)", {
+            MySQL.Async.execute([[
+                DELETE FROM heavenly_accounts
+                WHERE LOWER(username) = LOWER(@username)
+            ]], {
                 ["@username"] = account.username
             }, function()
                 HeavenlySessions[source] = nil

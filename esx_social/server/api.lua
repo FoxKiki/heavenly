@@ -76,8 +76,7 @@ local function parseJsonObject(value)
 end
 
 local function parseJsonArray(value)
-    local decoded = parseJsonObject(value)
-    return decoded
+    return parseJsonObject(value)
 end
 
 local function buildProfileResponse(username, row)
@@ -132,13 +131,14 @@ local function withTargetAccount(source, requestedUsername, options, cb)
 end
 
 ESX.RegisterServerCallback("heavenly:getProfile", function(source, cb, username)
-    withTargetAccount(source, username, { mustMatchSession = false }, function(account, _, err)
+    withTargetAccount(source, username, { mustMatchSession = false }, function(account, sessionUsername, err)
         if err then
             cb({ ok = false, message = err })
             return
         end
 
-        local createIfMissing = getSessionUsername(source) and normalizeUsername(account.username):lower() == normalizeUsername(getSessionUsername(source)):lower()
+        local createIfMissing = sessionUsername
+            and normalizeUsername(account.username):lower() == normalizeUsername(sessionUsername):lower()
 
         fetchProfileByIdentifier(account.identifier, createIfMissing, function(row)
             cb(buildProfileResponse(account.username, row))
