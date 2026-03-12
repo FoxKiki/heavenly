@@ -84,123 +84,157 @@ window.Heavenly = window.Heavenly || {};
     }
   }
 
-  window.showHome = function (username) {
-    var chip = getEl("userChipAvatar");
+window.showHome = async function (username) {
+  var chip = getEl("userChipAvatar");
 
-    if (chip) {
-      chip.innerText = getInitials(username);
-    }
+  if (chip) {
+    chip.innerText = getInitials(username);
+    chip.style.backgroundImage = "";
+    chip.style.backgroundSize = "";
+    chip.style.backgroundPosition = "";
+    chip.style.backgroundRepeat = "";
+  }
 
-    if (typeof window.applyHomeProfileTheme === "function") {
-      window.applyHomeProfileTheme();
-    }
-
-    if (Heavenly.fortune && Heavenly.fortune.init) {
-      Heavenly.fortune.init();
-    }
-
-    if (Heavenly.clock && Heavenly.clock.start) {
-      Heavenly.clock.start();
-    }
-
-    updateFriendRequestDot();
-
+  if (Heavenly.api && Heavenly.api.getAvatar && chip) {
     try {
-      window.renderFriends();
+      var avatarResult = await Heavenly.api.getAvatar(username);
+
+      if (avatarResult && avatarResult.ok && avatarResult.data) {
+        chip.innerText = "";
+        chip.style.backgroundImage = 'url("' + avatarResult.data + '")';
+        chip.style.backgroundSize = "cover";
+        chip.style.backgroundPosition = "center";
+        chip.style.backgroundRepeat = "no-repeat";
+      }
     } catch (error) {
-      console.error("renderFriends failed", error);
+      console.warn("Home avatar load failed", error);
     }
-  };
+  }
 
-  window.renderFriends = async function () {
-    var list = getEl("friendsList");
-    var user = getCurrentUser();
+  if (typeof window.applyHomeProfileTheme === "function") {
+    window.applyHomeProfileTheme();
+  }
 
-    if (!list || !user) return;
+  if (Heavenly.fortune && Heavenly.fortune.init) {
+    Heavenly.fortune.init();
+  }
 
-    var query = (getEl("friendSearch") ? getEl("friendSearch").value : "")
-      .trim()
-      .toLowerCase();
+  if (Heavenly.clock && Heavenly.clock.start) {
+    Heavenly.clock.start();
+  }
 
-    list.innerHTML = "";
+  updateFriendRequestDot();
 
-    var friends = [];
+  try {
+    await window.renderFriends();
+  } catch (error) {
+    console.error("renderFriends failed", error);
+  }
+};
 
-    if (Heavenly.api && Heavenly.api.getFriends) {
-      var result = await Heavenly.api.getFriends(user);
-      if (result && result.ok && Array.isArray(result.data)) {
-        friends = result.data;
+window.renderFriends = async function () {
+  var list = getEl("friendsList");
+  var user = getCurrentUser();
+
+  if (!list || !user) return;
+
+  var query = (getEl("friendSearch") ? getEl("friendSearch").value : "")
+    .trim()
+    .toLowerCase();
+
+  list.innerHTML = "";
+
+  var friends = [];
+
+  if (Heavenly.api && Heavenly.api.getFriends) {
+    var result = await Heavenly.api.getFriends(user);
+    if (result && result.ok && Array.isArray(result.data)) {
+      friends = result.data;
+    }
+  }
+
+  var filtered = friends.filter(function (name) {
+    if (isBlocked(user, name)) {
+      return false;
+    }
+
+    return String(name).toLowerCase().includes(query);
+  });
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="feedItem">Keine Freunde gefunden.</div>';
+    return;
+  }
+
+  for (var index = 0; index < filtered.length; index++) {
+    var name = filtered[index];
+
+    var item = document.createElement("div");
+    item.className = "friendItem";
+
+    var avatar = document.createElement("div");
+    avatar.className = "friendAvatar friendClickable";
+    avatar.innerText = getInitials(name);
+    avatar.onclick = (function (username) {
+      return function () {
+        openProfilePreview(username);
+      };
+    })(name);
+
+    if (Heavenly.api && Heavenly.api.getAvatar) {
+      try {
+        var avatarResult = await Heavenly.api.getAvatar(name);
+
+        if (avatarResult && avatarResult.ok && avatarResult.data) {
+          avatar.innerText = "";
+          avatar.style.backgroundImage = 'url("' + avatarResult.data + '")';
+          avatar.style.backgroundSize = "cover";
+          avatar.style.backgroundPosition = "center";
+          avatar.style.backgroundRepeat = "no-repeat";
+        }
+      } catch (error) {
+        console.warn("Friend avatar load failed", error);
       }
     }
 
-var filtered = friends.filter(function (name) {
+    var meta = document.createElement("div");
+    meta.className = "friendMeta friendClickable";
+    meta.onclick = (function (username) {
+      return function () {
+        openProfilePreview(username);
+      };
+    })(name);
 
-  if (isBlocked(user, name)) {
-    return false;
+    var friendName = document.createElement("div");
+    friendName.className = "friendName";
+    friendName.innerText = name;
+
+    var friendStatus = document.createElement("div");
+    friendStatus.className = "friendStatus";
+    friendStatus.innerText = "Freund";
+
+    var removeBtn = document.createElement("button");
+    removeBtn.className = "friendActionBtn";
+    removeBtn.type = "button";
+    removeBtn.title = "Freund entfernen";
+    removeBtn.innerHTML = "✖";
+    removeBtn.onclick = (function (username) {
+      return function () {
+        window.openRemoveFriendPopup(username);
+      };
+    })(name);
+
+    meta.appendChild(friendName);
+    meta.appendChild(friendStatus);
+
+    item.appendChild(avatar);
+    item.appendChild(meta);
+    item.appendChild(removeBtn);
+
+    list.appendChild(item);
   }
-
-  return String(name).toLowerCase().includes(query);
-});
-
-    if (filtered.length === 0) {
-      list.innerHTML = '<div class="feedItem">Keine Freunde gefunden.</div>';
-      return;
-    }
-
-    filtered.forEach(function (name) {
-      var item = document.createElement("div");
-      item.className = "friendItem";
-
-      var initials = String(name)
-        .split(" ")
-        .filter(Boolean)
-        .slice(0, 2)
-        .map(function (word) {
-          return word[0].toUpperCase();
-        })
-        .join("");
-
-      var avatar = document.createElement("div");
-      avatar.className = "friendAvatar friendClickable";
-      avatar.innerText = initials || String(name).charAt(0).toUpperCase();
-      avatar.onclick = function () {
-        openProfilePreview(name);
-      };
-
-      var meta = document.createElement("div");
-      meta.className = "friendMeta friendClickable";
-      meta.onclick = function () {
-        openProfilePreview(name);
-      };
-
-      var friendName = document.createElement("div");
-      friendName.className = "friendName";
-      friendName.innerText = name;
-
-      var friendStatus = document.createElement("div");
-      friendStatus.className = "friendStatus";
-      friendStatus.innerText = "Freund";
-
-      var removeBtn = document.createElement("button");
-      removeBtn.className = "friendActionBtn";
-      removeBtn.type = "button";
-      removeBtn.title = "Freund entfernen";
-      removeBtn.innerHTML = "✖";
-      removeBtn.onclick = function () {
-        window.openRemoveFriendPopup(name);
-      };
-
-      meta.appendChild(friendName);
-      meta.appendChild(friendStatus);
-
-      item.appendChild(avatar);
-      item.appendChild(meta);
-      item.appendChild(removeBtn);
-
-      list.appendChild(item);
-    });
-  };
-
+};
+   
   window.addDemoFriends = async function () {
     var user = getCurrentUser();
     if (!user) return;
