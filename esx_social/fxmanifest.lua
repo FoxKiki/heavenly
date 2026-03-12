@@ -27,6 +27,8 @@ ui_page 'html/index.html'
 
 files {
     'html/index.html',
+    'html/app.css',
+    'html/app.js',
     'html/*.png',
     'html/*.jpg',
     'html/*.jpeg',
