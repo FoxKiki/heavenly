@@ -103,3 +103,40 @@ RegisterNUICallback("clearProfileData", function(_, cb)
         cb(result)
     end)
 end)
+
+RegisterNUICallback("register", function(data, cb)
+    ESX.TriggerServerCallback("heavenly:register", function(result)
+        cb(result)
+    end,
+        data and data.username,
+        data and data.password,
+        data and data.passwordRepeat
+    )
+end)
+
+RegisterNUICallback("login", function(data, cb)
+    ESX.TriggerServerCallback("heavenly:login", function(result)
+        cb(result)
+    end,
+        data and data.username,
+        data and data.password
+    )
+end)
+
+RegisterNUICallback("logout", function(_, cb)
+    ESX.TriggerServerCallback("heavenly:logout", function(result)
+        cb(result)
+    end)
+end)
+
+RegisterNUICallback("getAccounts", function(_, cb)
+    ESX.TriggerServerCallback("heavenly:getAccounts", function(result)
+        cb(result)
+    end)
+end)
+
+RegisterNUICallback("deleteAccount", function(_, cb)
+    ESX.TriggerServerCallback("heavenly:deleteAccount", function(result)
+        cb(result)
+    end)
+end)
