@@ -116,138 +116,135 @@
     <input id="coverUploadInput" type="file" accept="image/*" hidden />
 
     <div class="profileContent">
-    <div id="coverBox" class="coverBox" onclick="openImageViewer('cover')">
-  <div class="coverOverlay">
-    <div class="coverIdentity" onclick="openImageViewer('avatar'); event.stopPropagation();">
-      <div id="profilePic" class="profilePic">
-        <span id="profilePicText">KF</span>
-      </div>
+      <div id="coverBox" class="coverBox" onclick="openImageViewer('cover')">
+        <div class="coverOverlay">
+          <div class="coverIdentity" onclick="openImageViewer('avatar'); event.stopPropagation();">
+            <div id="profilePic" class="profilePic">
+              <span id="profilePicText">KF</span>
+            </div>
 
-      <div class="profileNameWrap">
-        <div id="profileStatus" class="profileStatus">✨ Willkommen in meinem Heavenly Profil</div>
-      </div>
-    </div>
+            <div class="profileNameWrap">
+              <div id="profileStatus" class="profileStatus">✨ Willkommen in meinem Heavenly Profil</div>
+            </div>
+          </div>
 
-    <div
-      id="foreignProfileActions"
-      class="foreignProfileActions"
-      onclick="event.stopPropagation()"
-    >
-      <button
-        id="foreignProfileGearBtn"
-        class="foreignProfileGearBtn"
-        type="button"
-        onclick="event.stopPropagation(); toggleForeignProfileMenu();"
-        title="Profiloptionen"
-      >
-        ⚙
-      </button>
+          <div
+            id="foreignProfileActions"
+            class="foreignProfileActions"
+            onclick="event.stopPropagation()"
+          >
+            <button
+              id="foreignProfileGearBtn"
+              class="foreignProfileGearBtn"
+              type="button"
+              onclick="event.stopPropagation(); toggleForeignProfileMenu();"
+              title="Profiloptionen"
+            >
+              ⚙
+            </button>
 
-      <div
-        id="foreignProfileMenu"
-        class="foreignProfileMenu"
-        onclick="event.stopPropagation()"
-      >
-        <button
-          type="button"
-          onclick="event.stopPropagation(); sendFriendRequestToViewedUser()"
-        >
-          👥 Freundesanfrage
-        </button>
+            <div
+              id="foreignProfileMenu"
+              class="foreignProfileMenu"
+              onclick="event.stopPropagation()"
+            >
+              <button
+                type="button"
+                onclick="event.stopPropagation(); sendFriendRequestToViewedUser()"
+              >
+                👥 Freundesanfrage
+              </button>
 
-        <button
-          type="button"
-          onclick="event.stopPropagation(); blockViewedUser()"
-        >
-          🚫 Blockieren
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="profileLowerRow">
-  <div class="profileInfoBox">
-    <div id="profileNameBig" class="profileNameBig">Kiki Fox</div>
-
-    <div class="profileInfoList">
-      <div class="profileInfoItem">
-        <span class="profileInfoLabel">Privatnachrichten</span>
-        <button
-          id="profileDmBtn"
-          class="profileInlineBtn"
-          type="button"
-          onclick="openDMs()"
-        >
-          Öffnen
-        </button>
-      </div>
-
-      <div class="profileInfoItem">
-        <span class="profileInfoLabel">Beziehungsstatus</span>
-        <span id="relationshipStatusText" class="profileInfoValue">Keine Angabe</span>
-      </div>
-
-      <div
-        id="relationshipPartnerRow"
-        class="profileInfoItem"
-        style="display:none;"
-      >
-        <span class="profileInfoLabel">Partner</span>
-        <button
-          id="relationshipPartnerBtn"
-          class="profileLinkBtn"
-          type="button"
-          onclick="openRelationshipPartnerProfile()"
-        >
-          Profil öffnen
-        </button>
-      </div>
-    </div>
-
-    <div class="profileInfoActions">
-      <button
-        id="relationshipEditBtn"
-        class="profileInfoBtn"
-        type="button"
-        onclick="openRelationshipPopup()"
-      >
-        Beziehung bearbeiten
-      </button>
-
-      <div class="profileSettingsWrap">
-        <button
-          id="profileSettingsBtn"
-          class="profileInfoBtn"
-          type="button"
-          onclick="toggleProfileMenu()"
-          title="Optionen"
-        >
-          ⚙ Einstellungen
-        </button>
-
-        <div id="profileMenu" class="profileMenu" onclick="event.stopPropagation()">
-          <button type="button" onclick="event.stopPropagation(); openProfileSection('homeProfile')">Home &amp; Profile</button>
-          <button type="button" onclick="event.stopPropagation(); openProfileSection('avatar')">Profilbild ändern</button>
-          <button type="button" onclick="event.stopPropagation(); openProfileSection('cover')">Titelbild ändern</button>
-          <button type="button" onclick="event.stopPropagation(); openProfileSection('status')">Status ändern</button>
-          <button type="button" onclick="event.stopPropagation(); openProfileSection('relationship')">Beziehungsstatus ändern</button>
-          <button type="button" onclick="event.stopPropagation(); openProfileSection('blocklist')">Blockliste</button>
-          <button type="button" onclick="event.stopPropagation(); openProfileSection('deleteAccount')">Konto löschen</button>
+              <button
+                type="button"
+                onclick="event.stopPropagation(); blockViewedUser()"
+              >
+                🚫 Blockieren
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <div class="profileMainBox">
-    <h3>Coming soon</h3>
-    <div class="feedItem"></div>
-  </div>
-</div>
+      <div class="profileLowerRow">
+        <div class="profileInfoBox">
+          <div id="profileNameBig" class="profileNameBig">Kiki Fox</div>
 
-      <div class="profileCard">
-        <h3>Coming soon</h3>
-        <div class="feedItem"></div>
+          <div class="profileInfoList">
+            <div class="profileInfoItem">
+              <span class="profileInfoLabel">Privatnachrichten</span>
+              <button
+                id="profileDmBtn"
+                class="profileInlineBtn"
+                type="button"
+                onclick="openDMs()"
+              >
+                Öffnen
+              </button>
+            </div>
+
+            <div class="profileInfoItem">
+              <span class="profileInfoLabel">Beziehungsstatus</span>
+              <span id="relationshipStatusText" class="profileInfoValue">Keine Angabe</span>
+            </div>
+
+            <div id="relationshipPartnerRow" class="profileInfoItem" style="display:none;">
+              <span class="profileInfoLabel">Partner</span>
+              <button
+                id="relationshipPartnerBtn"
+                class="profileLinkBtn"
+                type="button"
+                onclick="openRelationshipPartnerProfile()"
+              >
+                Profil öffnen
+              </button>
+            </div>
+
+            <div id="birthdayRow" class="profileInfoItem" style="display:none;">
+              <span class="profileInfoLabel">Geburtstag</span>
+              <span id="birthdayText" class="profileInfoValue"></span>
+            </div>
+
+            <div id="jobRow" class="profileInfoItem" style="display:none;">
+              <span class="profileInfoLabel">Beruf</span>
+              <span id="jobText" class="profileInfoValue"></span>
+            </div>
+
+            <div id="aboutRow" class="profileInfoItem" style="display:none;">
+              <span class="profileInfoLabel">Über mich</span>
+              <span id="aboutText" class="profileInfoValue"></span>
+            </div>
+          </div>
+
+          <div class="profileInfoActions">
+            <div class="profileSettingsWrap">
+              <button
+                id="profileSettingsBtn"
+                class="profileInfoBtn"
+                type="button"
+                onclick="toggleProfileMenu()"
+                title="Optionen"
+              >
+                ⚙ Einstellungen
+              </button>
+
+              <div id="profileMenu" class="profileMenu" onclick="event.stopPropagation()">
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('homeProfile')">Home &amp; Profile</button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('avatar')">Profilbild ändern</button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('cover')">Titelbild ändern</button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('status')">Status ändern</button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('infoBox')">Infobox bearbeiten</button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('blocklist')">Blockliste</button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('deleteAccount')">Konto löschen</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="profileMainBox">
+          <h3>Coming soon</h3>
+          <div class="feedItem"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -342,37 +339,6 @@
     </div>
   </div>
 
-  <div id="relationshipPopup" class="popup">
-  <div class="popup-box">
-    <h2>Beziehungsstatus</h2>
-
-    <label class="hpField">
-      <span>Status</span>
-      <select id="relationshipStatusSelect">
-        <option value="">Keine Angabe</option>
-        <option value="single">Single</option>
-        <option value="in_relationship">In einer Beziehung</option>
-        <option value="married">Verheiratet</option>
-        <option value="complicated">Es ist kompliziert</option>
-      </select>
-    </label>
-
-    <label class="hpField">
-      <span>Partnername (optional)</span>
-      <input
-        id="relationshipPartnerInput"
-        type="text"
-        placeholder="z. B. Max"
-      />
-    </label>
-
-    <div class="popupActionRow">
-      <button type="button" onclick="saveRelationshipStatus()">Speichern</button>
-      <button class="close" type="button" onclick="closeRelationshipPopup()">Abbrechen</button>
-    </div>
-  </div>
-</div>
-
   <div id="deleteAccountPopup" class="popup">
     <div class="popup-box">
       <h2>Konto löschen</h2>
@@ -439,6 +405,48 @@
         <button type="button" onclick="saveHomeProfileSettings()">Speichern</button>
         <button type="button" onclick="resetHomeProfileSettings()">Zurücksetzen</button>
         <button class="close" type="button" onclick="closeHomeProfilePopup()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="infoBoxPopup" class="popup">
+    <div class="popup-box homeProfilePopupBox">
+      <h2>Infobox bearbeiten</h2>
+
+      <label class="hpField">
+        <span>Beziehungsstatus</span>
+        <select id="infoRelationshipStatus">
+          <option value="">Keine Angabe</option>
+          <option value="single">Single</option>
+          <option value="in_relationship">In einer Beziehung</option>
+          <option value="married">Verheiratet</option>
+          <option value="complicated">Es ist kompliziert</option>
+        </select>
+      </label>
+
+      <label class="hpField">
+        <span>Partnername (optional)</span>
+        <input id="infoRelationshipPartner" type="text" placeholder="z. B. mccy" />
+      </label>
+
+      <label class="hpField">
+        <span>Geburtstag</span>
+        <input id="infoBirthday" type="text" placeholder="z. B. 14.02.2000" />
+      </label>
+
+      <label class="hpField">
+        <span>Beruf</span>
+        <input id="infoJob" type="text" placeholder="z. B. Sanitäterin" />
+      </label>
+
+      <label class="hpField">
+        <span>Über mich</span>
+        <input id="infoAbout" type="text" placeholder="Ein kleiner Text über dich" maxlength="160" />
+      </label>
+
+      <div class="hpActions">
+        <button type="button" onclick="saveInfoBoxSettings()">Speichern</button>
+        <button class="close" type="button" onclick="closeInfoBoxPopup()">Abbrechen</button>
       </div>
     </div>
   </div>

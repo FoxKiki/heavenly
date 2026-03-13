@@ -192,17 +192,12 @@ window.Heavenly = window.Heavenly || {};
     return "Keine Angabe";
   }
 
-  async function saveRelationshipData(user, relationship) {
-    if (!user || !Heavenly.storage) return;
-
-    var settings = Heavenly.storage.getSettings(user) || {};
-
-    settings.relationship = {
-      status: relationship && relationship.status ? relationship.status : "",
-      partner: relationship && relationship.partner ? relationship.partner : ""
+  function getInfoBoxData(settings) {
+    return {
+      birthday: settings && settings.birthday ? settings.birthday : "",
+      job: settings && settings.job ? settings.job : "",
+      about: settings && settings.about ? settings.about : ""
     };
-
-    Heavenly.storage.setSettings(user, settings);
   }
 
   async function applyRelationshipInfo() {
@@ -228,6 +223,109 @@ window.Heavenly = window.Heavenly || {};
         partnerRow.style.display = "none";
         partnerBtn.innerText = "Profil öffnen";
       }
+    }
+  }
+
+  async function applyInfoBoxDetails() {
+    var user = getViewedUser();
+    if (!user) return;
+
+    var settings = await getUserSettings(user);
+    var info = getInfoBoxData(settings);
+
+    var birthdayRow = getEl("birthdayRow");
+    var birthdayText = getEl("birthdayText");
+    var jobRow = getEl("jobRow");
+    var jobText = getEl("jobText");
+    var aboutRow = getEl("aboutRow");
+    var aboutText = getEl("aboutText");
+
+    if (birthdayRow && birthdayText) {
+      if (info.birthday && info.birthday.trim()) {
+        birthdayRow.style.display = "flex";
+        birthdayText.innerText = info.birthday.trim();
+      } else {
+        birthdayRow.style.display = "none";
+        birthdayText.innerText = "";
+      }
+    }
+
+    if (jobRow && jobText) {
+      if (info.job && info.job.trim()) {
+        jobRow.style.display = "flex";
+        jobText.innerText = info.job.trim();
+      } else {
+        jobRow.style.display = "none";
+        jobText.innerText = "";
+      }
+    }
+
+    if (aboutRow && aboutText) {
+      if (info.about && info.about.trim()) {
+        aboutRow.style.display = "flex";
+        aboutText.innerText = info.about.trim();
+      } else {
+        aboutRow.style.display = "none";
+        aboutText.innerText = "";
+      }
+    }
+  }
+
+  async function openInfoBoxPopup() {
+    var user = getCurrentUser();
+    if (!user || !Heavenly.storage) return;
+
+    var settings = Heavenly.storage.getSettings(user) || {};
+    var relationship = getRelationshipData(settings);
+    var info = getInfoBoxData(settings);
+
+    var popup = getEl("infoBoxPopup");
+    var relationshipStatus = getEl("infoRelationshipStatus");
+    var relationshipPartner = getEl("infoRelationshipPartner");
+    var birthday = getEl("infoBirthday");
+    var job = getEl("infoJob");
+    var about = getEl("infoAbout");
+
+    if (relationshipStatus) relationshipStatus.value = relationship.status || "";
+    if (relationshipPartner) relationshipPartner.value = relationship.partner || "";
+    if (birthday) birthday.value = info.birthday || "";
+    if (job) job.value = info.job || "";
+    if (about) about.value = info.about || "";
+
+    if (popup) {
+      popup.classList.add("active");
+    }
+  }
+
+  function closeInfoBoxPopup() {
+    var popup = getEl("infoBoxPopup");
+    if (popup) {
+      popup.classList.remove("active");
+    }
+  }
+
+  async function saveInfoBoxSettings() {
+    var user = getCurrentUser();
+    if (!user || !Heavenly.storage) return;
+
+    var settings = Heavenly.storage.getSettings(user) || {};
+
+    settings.relationship = {
+      status: getEl("infoRelationshipStatus") ? getEl("infoRelationshipStatus").value : "",
+      partner: getEl("infoRelationshipPartner") ? getEl("infoRelationshipPartner").value.trim() : ""
+    };
+
+    settings.birthday = getEl("infoBirthday") ? getEl("infoBirthday").value.trim() : "";
+    settings.job = getEl("infoJob") ? getEl("infoJob").value.trim() : "";
+    settings.about = getEl("infoAbout") ? getEl("infoAbout").value.trim() : "";
+
+    Heavenly.storage.setSettings(user, settings);
+
+    await applyProfileImages();
+    closeInfoBoxPopup();
+
+    if (typeof window.setFeedback === "function") {
+      window.setFeedback("Infobox gespeichert", true);
     }
   }
 
@@ -394,6 +492,7 @@ window.Heavenly = window.Heavenly || {};
     await applyAvatarImage();
     await applyCoverImage();
     await applyRelationshipInfo();
+    await applyInfoBoxDetails();
     await applyHomeProfileTheme();
   }
 
@@ -604,6 +703,13 @@ window.Heavenly = window.Heavenly || {};
     }
   }
 
+  function closeInfoBoxPopupSafe() {
+    var popup = getEl("infoBoxPopup");
+    if (popup) {
+      popup.classList.remove("active");
+    }
+  }
+
   function closeDeleteAccountPopup() {
     var popup = getEl("deleteAccountPopup");
     if (popup) {
@@ -618,17 +724,9 @@ window.Heavenly = window.Heavenly || {};
     }
   }
 
-  function closeRelationshipPopup() {
-    var popup = getEl("relationshipPopup");
-    if (popup) {
-      popup.classList.remove("active");
-    }
-  }
-
   function updateProfileActionVisibility() {
     var ownSettingsBtn = getEl("profileSettingsBtn");
     var ownDmBtn = getEl("profileDmBtn");
-    var ownRelationshipBtn = getEl("relationshipEditBtn");
     var foreignActions = getEl("foreignProfileActions");
 
     if (ownSettingsBtn) {
@@ -637,10 +735,6 @@ window.Heavenly = window.Heavenly || {};
 
     if (ownDmBtn) {
       ownDmBtn.style.display = isOwnProfile() ? "inline-flex" : "none";
-    }
-
-    if (ownRelationshipBtn) {
-      ownRelationshipBtn.style.display = isOwnProfile() ? "block" : "none";
     }
 
     if (foreignActions) {
@@ -693,55 +787,10 @@ window.Heavenly = window.Heavenly || {};
     }
   }
 
-  async function openRelationshipPopup() {
-    var user = getCurrentUser();
-    if (!user) return;
-
-    var settings = await getUserSettings(user);
-    var relationship = getRelationshipData(settings);
-
-    var popup = getEl("relationshipPopup");
-    var statusSelect = getEl("relationshipStatusSelect");
-    var partnerInput = getEl("relationshipPartnerInput");
-
-    if (statusSelect) {
-      statusSelect.value = relationship.status || "";
-    }
-
-    if (partnerInput) {
-      partnerInput.value = relationship.partner || "";
-    }
-
-    if (popup) {
-      popup.classList.add("active");
-    }
-  }
-
   function openDeleteAccountPopup() {
     var popup = getEl("deleteAccountPopup");
     if (popup) {
       popup.classList.add("active");
-    }
-  }
-
-  async function saveRelationshipStatus() {
-    var user = getCurrentUser();
-    if (!user) return;
-
-    var statusSelect = getEl("relationshipStatusSelect");
-    var partnerInput = getEl("relationshipPartnerInput");
-
-    var relationship = {
-      status: statusSelect ? statusSelect.value : "",
-      partner: partnerInput ? partnerInput.value.trim() : ""
-    };
-
-    await saveRelationshipData(user, relationship);
-    await applyProfileImages();
-    closeRelationshipPopup();
-
-    if (typeof window.setFeedback === "function") {
-      window.setFeedback("Beziehungsstatus aktualisiert", true);
     }
   }
 
@@ -826,8 +875,8 @@ window.Heavenly = window.Heavenly || {};
     closeImageViewer();
     closeStatusPopup();
     closeHomeProfilePopup();
+    closeInfoBoxPopupSafe();
     closeBlocklistPopup();
-    closeRelationshipPopup();
 
     try {
       var result = await Heavenly.api.deleteAccount(user);
@@ -942,7 +991,7 @@ window.Heavenly = window.Heavenly || {};
   window.closeStatusPopup = closeStatusPopup;
   window.closeHomeProfilePopup = closeHomeProfilePopup;
   window.closeDeleteAccountPopup = closeDeleteAccountPopup;
-  window.closeRelationshipPopup = closeRelationshipPopup;
+  window.closeInfoBoxPopup = closeInfoBoxPopup;
   window.saveStatus = saveStatus;
   window.saveHomeProfileSettings = saveHomeProfileSettings;
   window.resetHomeProfileSettings = resetHomeProfileSettings;
@@ -950,9 +999,9 @@ window.Heavenly = window.Heavenly || {};
   window.closeImageViewer = closeImageViewer;
   window.confirmDeleteAccount = confirmDeleteAccount;
   window.removeFriendFromViewedUser = removeFriendFromViewedUser;
-  window.saveRelationshipStatus = saveRelationshipStatus;
   window.openRelationshipPartnerProfile = openRelationshipPartnerProfile;
-  window.openRelationshipPopup = openRelationshipPopup;
+  window.openInfoBoxPopup = openInfoBoxPopup;
+  window.saveInfoBoxSettings = saveInfoBoxSettings;
 
   window.openProfile = async function () {
     var user = getCurrentUser();
@@ -999,9 +1048,9 @@ window.Heavenly = window.Heavenly || {};
     closeImageViewer();
     closeStatusPopup();
     closeHomeProfilePopup();
+    closeInfoBoxPopupSafe();
     closeDeleteAccountPopup();
     closeBlocklistPopup();
-    closeRelationshipPopup();
 
     if (Heavenly.state) {
       Heavenly.state.viewedProfileUser = null;
@@ -1062,9 +1111,9 @@ window.Heavenly = window.Heavenly || {};
       return;
     }
 
-    if (section === "relationship") {
+    if (section === "infoBox") {
       if (isOwnProfile()) {
-        await openRelationshipPopup();
+        await openInfoBoxPopup();
       }
       return;
     }
