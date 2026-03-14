@@ -1617,10 +1617,15 @@ body{
 
 .heavenlyMediaTabs{
   display:flex;
+  align-items:center;
   gap:8px;
   padding:10px 12px;
   border-bottom:1px solid rgba(255,255,255,0.08);
   background:rgba(255,255,255,0.03);
+}
+
+.heavenlyMediaTabs .heavenlyMediaPickerClose{
+  margin-left:auto;
 }
 
 .heavenlyMediaTab{

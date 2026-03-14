@@ -2,6 +2,7 @@ window.Heavenly = window.Heavenly || {};
 
 (function () {
   var ignoreNextOutsideClick = false;
+  var lastMediaTab = "emoji";
 
   function getEl(id) {
     return document.getElementById(id);
@@ -32,25 +33,17 @@ window.Heavenly = window.Heavenly || {};
     closeMediaPicker();
   }
 
-  function sendGifMessage(gif) {
-    if (!gif) return;
-
-    if (typeof window.sendActiveGif === "function") {
-      window.sendActiveGif(gif);
-    }
-
-    closeMediaPicker();
-  }
-
   function createTabButton(label, isActive, onClick) {
     var btn = document.createElement("button");
     btn.className = "heavenlyMediaTab" + (isActive ? " active" : "");
     btn.type = "button";
     btn.innerText = label;
+
     btn.onclick = function (event) {
       event.stopPropagation();
       onClick();
     };
+
     return btn;
   }
 
@@ -114,6 +107,7 @@ window.Heavenly = window.Heavenly || {};
       var btn = document.createElement("button");
       btn.className = "heavenlyAssetBtn";
       btn.type = "button";
+      btn.title = emote.label || emote.id || "Emote";
 
       var preview = createAssetPreview(
         emote.src,
@@ -136,45 +130,6 @@ window.Heavenly = window.Heavenly || {};
     });
   }
 
-  function renderGifTab(body) {
-    var gifs = (Heavenly.media && Heavenly.media.gifs) || [];
-
-    body.innerHTML = "";
-
-    if (!gifs.length) {
-      var empty = document.createElement("div");
-      empty.className = "heavenlyMediaPickerEmpty";
-      empty.innerText = "Noch keine GIFs hinterlegt.";
-      body.appendChild(empty);
-      return;
-    }
-
-    gifs.forEach(function (gif) {
-      var btn = document.createElement("button");
-      btn.className = "heavenlyAssetBtn";
-      btn.type = "button";
-
-      var preview = createAssetPreview(
-        gif.src,
-        gif.label || gif.id || "GIF"
-      );
-
-      var label = document.createElement("div");
-      label.className = "heavenlyAssetLabel";
-      label.innerText = gif.label || gif.id || "GIF";
-
-      btn.appendChild(preview);
-      btn.appendChild(label);
-
-      btn.onclick = function (event) {
-        event.stopPropagation();
-        sendGifMessage(gif);
-      };
-
-      body.appendChild(btn);
-    });
-  }
-
   function buildPicker(initialTab) {
     closeMediaPicker();
 
@@ -186,12 +141,11 @@ window.Heavenly = window.Heavenly || {};
       event.stopPropagation();
     });
 
-    var header = document.createElement("div");
-    header.className = "heavenlyMediaPickerHeader";
+    var tabs = document.createElement("div");
+    tabs.className = "heavenlyMediaTabs";
 
-    var title = document.createElement("div");
-    title.className = "heavenlyMediaPickerTitle";
-    title.innerText = "Medien";
+    var body = document.createElement("div");
+    body.className = "heavenlyMediaPickerBody";
 
     var closeBtn = document.createElement("button");
     closeBtn.className = "heavenlyMediaPickerClose";
@@ -201,15 +155,6 @@ window.Heavenly = window.Heavenly || {};
       event.stopPropagation();
       closeMediaPicker();
     };
-
-    header.appendChild(title);
-    header.appendChild(closeBtn);
-
-    var tabs = document.createElement("div");
-    tabs.className = "heavenlyMediaTabs";
-
-    var body = document.createElement("div");
-    body.className = "heavenlyMediaPickerBody";
 
     function renderTab(tabName) {
       tabs.innerHTML = "";
@@ -226,13 +171,10 @@ window.Heavenly = window.Heavenly || {};
         })
       );
 
-      tabs.appendChild(
-        createTabButton("GIF", tabName === "gif", function () {
-          renderTab("gif");
-        })
-      );
+      tabs.appendChild(closeBtn);
 
       picker.dataset.activeTab = tabName;
+      lastMediaTab = tabName;
 
       if (tabName === "emoji") {
         renderEmojiTab(body);
@@ -241,20 +183,14 @@ window.Heavenly = window.Heavenly || {};
 
       if (tabName === "emote") {
         renderEmoteTab(body);
-        return;
-      }
-
-      if (tabName === "gif") {
-        renderGifTab(body);
       }
     }
 
-    picker.appendChild(header);
     picker.appendChild(tabs);
     picker.appendChild(body);
 
     document.body.appendChild(picker);
-    renderTab(initialTab || "emoji");
+    renderTab(initialTab || lastMediaTab || "emoji");
   }
 
   function toggleMediaPicker(tabName) {
@@ -299,10 +235,6 @@ window.Heavenly = window.Heavenly || {};
 
   window.openEmotePicker = function () {
     toggleMediaPicker("emote");
-  };
-
-  window.openGifPicker = function () {
-    toggleMediaPicker("gif");
   };
 
   window.closeMediaPicker = closeMediaPicker;

@@ -135,6 +135,30 @@ window.Heavenly = window.Heavenly || {};
     });
   }
 
+  function isDirectImageUrl(text) {
+  var value = String(text || "").trim();
+
+  if (!value) return false;
+
+  return /^(https?:\/\/.+|\/?.+\.(gif|png|jpe?g|webp))(\?.*)?$/i.test(value);
+}
+
+function normalizeImageUrl(text) {
+  var value = String(text || "").trim();
+
+  if (!value) return "";
+
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  if (value.charAt(0) === "/") {
+    return value;
+  }
+
+  return value;
+}
+
   async function getFriends() {
     var user = getCurrentUser();
     if (!user || !Heavenly.api || !Heavenly.api.getFriends) return [];
@@ -377,10 +401,10 @@ window.Heavenly = window.Heavenly || {};
 
         if (row.lastMessage.type === "image") {
           preview.innerText = prefix + "Bild gesendet";
+        } else if (row.lastMessage.type === "imageLink") {
+          preview.innerText = prefix + "Bild/GIF-Link gesendet";
         } else if (row.lastMessage.type === "emote") {
           preview.innerText = prefix + "Emote gesendet";
-        } else if (row.lastMessage.type === "gif") {
-          preview.innerText = prefix + "GIF gesendet";
         } else {
           preview.innerText = prefix + (row.lastMessage.text || "");
         }
@@ -475,6 +499,23 @@ window.Heavenly = window.Heavenly || {};
         };
 
         bubble.appendChild(image);
+      } else if (msg.type === "imageLink" && msg.imageUrl) {
+        var linkedImage = document.createElement("img");
+        linkedImage.className = "dmMessageGif";
+        linkedImage.src = msg.imageUrl;
+        linkedImage.alt = "Eingebettetes Bild";
+
+        linkedImage.onclick = function () {
+          var viewer = getEl("imageViewer");
+          var viewerImg = getEl("imageViewerImg");
+
+          if (viewer && viewerImg) {
+            viewerImg.src = this.src;
+            viewer.classList.add("open");
+          }
+        };
+
+        bubble.appendChild(linkedImage);
       } else if (msg.type === "emote" && msg.emoteSrc) {
         var emote = document.createElement("img");
         emote.className = "dmMessageEmote";
@@ -482,13 +523,6 @@ window.Heavenly = window.Heavenly || {};
         emote.alt = msg.emoteId || "Emote";
 
         bubble.appendChild(emote);
-      } else if (msg.type === "gif" && msg.gifSrc) {
-        var gif = document.createElement("img");
-        gif.className = "dmMessageGif";
-        gif.src = msg.gifSrc;
-        gif.alt = msg.gifId || "GIF";
-
-        bubble.appendChild(gif);
       } else {
         var text = document.createElement("div");
         text.className = "dmMessageText";
@@ -610,13 +644,22 @@ window.Heavenly = window.Heavenly || {};
     var text = input.value.trim();
     if (!text) return;
 
-    saveMessage(activeChat, {
+    var message = {
       from: currentUser,
       to: activeChatUser,
-      type: "text",
-      text: text,
       time: Date.now()
-    });
+    };
+
+    if (isDirectImageUrl(text)) {
+      message.type = "imageLink";
+      message.imageUrl = normalizeImageUrl(text);
+      message.text = text;
+     } else {
+      message.type = "text";
+      message.text = text;
+    }
+
+    saveMessage(activeChat, message);
 
     input.value = "";
     await refreshDmPanel();
@@ -635,25 +678,6 @@ window.Heavenly = window.Heavenly || {};
       type: "emote",
       emoteId: emote.id || "",
       emoteSrc: emote.src || "",
-      time: Date.now()
-    });
-
-    await refreshDmPanel();
-  };
-
-  window.sendActiveGif = async function (gif) {
-    var currentUser = getCurrentUser();
-    var activeChat = Heavenly.state ? Heavenly.state.activeChat : null;
-    var activeChatUser = Heavenly.state ? Heavenly.state.activeChatUser : null;
-
-    if (!currentUser || !activeChat || !activeChatUser || !gif) return;
-
-    saveMessage(activeChat, {
-      from: currentUser,
-      to: activeChatUser,
-      type: "gif",
-      gifId: gif.id || "",
-      gifSrc: gif.src || "",
       time: Date.now()
     });
 
@@ -680,14 +704,6 @@ window.Heavenly = window.Heavenly || {};
       if (typeof window.openEmotePicker === "function") {
         window.openEmotePicker();
       }
-      return;
-    }
-
-    if (type === "gif") {
-      if (typeof window.openGifPicker === "function") {
-        window.openGifPicker();
-      }
-      return;
     }
   };
 
