@@ -25,36 +25,82 @@ window.Heavenly = window.Heavenly || {};
     return [normalizeName(userA), normalizeName(userB)].sort().join(":");
   }
 
-  function getChatStore() {
-    if (!Heavenly.storage) return {};
-    return Heavenly.storage.getGlobal("chats") || {};
+  function getGlobalChatStore() {
+    try {
+      var raw = localStorage.getItem("heavenly_chats_global");
+      if (!raw) return {};
+
+      var parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (error) {
+      console.warn("Global chat store load failed", error);
+      return {};
+    }
   }
 
-  function saveChatStore(chats) {
-    if (!Heavenly.storage) return;
-    Heavenly.storage.setGlobal("chats", chats || {});
+  function saveGlobalChatStore(chats) {
+    try {
+      localStorage.setItem("heavenly_chats_global", JSON.stringify(chats || {}));
+    } catch (error) {
+      console.warn("Global chat store save failed", error);
+    }
+  }
+
+  function userHasAccessToChat(chatId, currentUser) {
+    if (!chatId || !currentUser) return false;
+
+    var parts = String(chatId).split(":");
+    if (parts.length !== 2) return false;
+
+    var current = normalizeName(currentUser);
+    return parts[0] === current || parts[1] === current;
+  }
+
+  function getChatStore() {
+    var currentUser = getCurrentUser();
+    var globalChats = getGlobalChatStore();
+    var filtered = {};
+
+    Object.keys(globalChats).forEach(function (chatId) {
+      if (userHasAccessToChat(chatId, currentUser)) {
+        filtered[chatId] = Array.isArray(globalChats[chatId]) ? globalChats[chatId] : [];
+      }
+    });
+
+    return filtered;
   }
 
   function getChatMessages(chatId) {
-    var chats = getChatStore();
-    return Array.isArray(chats[chatId]) ? chats[chatId] : [];
-  }
+    var currentUser = getCurrentUser();
+    if (!userHasAccessToChat(chatId, currentUser)) {
+      return [];
+    }
 
-  function saveChatMessages(chatId, messages) {
-    var chats = getChatStore();
-    chats[chatId] = Array.isArray(messages) ? messages : [];
-    saveChatStore(chats);
+    var chats = getGlobalChatStore();
+    return Array.isArray(chats[chatId]) ? chats[chatId] : [];
   }
 
   function ensureChat(userA, userB) {
     var chatId = getChatId(userA, userB);
-    var messages = getChatMessages(chatId);
+    var chats = getGlobalChatStore();
 
-    if (!Array.isArray(messages)) {
-      saveChatMessages(chatId, []);
+    if (!Array.isArray(chats[chatId])) {
+      chats[chatId] = [];
+      saveGlobalChatStore(chats);
     }
 
     return chatId;
+  }
+
+  function saveMessage(chatId, message) {
+    var chats = getGlobalChatStore();
+
+    if (!Array.isArray(chats[chatId])) {
+      chats[chatId] = [];
+    }
+
+    chats[chatId].push(message);
+    saveGlobalChatStore(chats);
   }
 
   function formatTime(timestamp) {
@@ -74,7 +120,9 @@ window.Heavenly = window.Heavenly || {};
     try {
       var result = await Heavenly.api.getFriends(user);
       if (result && result.ok && Array.isArray(result.data)) {
-        return result.data;
+        return result.data.filter(function (name) {
+          return normalizeName(name) !== normalizeName(user);
+        });
       }
     } catch (error) {
       console.warn("Friend load failed", error);
@@ -115,30 +163,30 @@ window.Heavenly = window.Heavenly || {};
 
   async function getConversationUsers() {
     var currentUser = getCurrentUser();
+    if (!currentUser) return [];
+
     var chats = getChatStore();
     var names = [];
-    var friends = await getFriends();
-
-    friends.forEach(function (name) {
-      if (!names.some(function (entry) {
-        return normalizeName(entry) === normalizeName(name);
-      })) {
-        names.push(name);
-      }
-    });
 
     Object.keys(chats).forEach(function (chatId) {
+      var messages = chats[chatId];
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return;
+      }
+
       var parts = String(chatId).split(":");
       if (parts.length !== 2) return;
 
-      if (parts[0] === normalizeName(currentUser) || parts[1] === normalizeName(currentUser)) {
-        var other = parts[0] === normalizeName(currentUser) ? parts[1] : parts[0];
+      var other = parts[0] === normalizeName(currentUser) ? parts[1] : parts[0];
 
-        if (!names.some(function (entry) {
+      if (
+        other &&
+        normalizeName(other) !== normalizeName(currentUser) &&
+        !names.some(function (entry) {
           return normalizeName(entry) === normalizeName(other);
-        })) {
-          names.push(other);
-        }
+        })
+      ) {
+        names.push(other);
       }
     });
 
@@ -159,6 +207,7 @@ window.Heavenly = window.Heavenly || {};
 
     for (var i = 0; i < friends.length; i++) {
       var name = friends[i];
+
       var item = document.createElement("button");
       item.className = "dmMiniFriendItem";
       item.type = "button";
@@ -243,6 +292,7 @@ window.Heavenly = window.Heavenly || {};
 
     for (var j = 0; j < rows.length; j++) {
       var row = rows[j];
+
       var item = document.createElement("button");
       item.className = "dmConversationItem";
       item.type = "button";
@@ -293,7 +343,13 @@ window.Heavenly = window.Heavenly || {};
 
       var preview = document.createElement("div");
       preview.className = "dmConversationPreview";
-      preview.innerText = row.lastMessage ? row.lastMessage.text : "Noch keine Nachrichten";
+
+      if (row.lastMessage) {
+        var prefix = normalizeName(row.lastMessage.from) === normalizeName(currentUser) ? "Du: " : "";
+        preview.innerText = prefix + row.lastMessage.text;
+      } else {
+        preview.innerText = "Noch keine Nachrichten";
+      }
 
       meta.appendChild(top);
       meta.appendChild(preview);
@@ -329,13 +385,15 @@ window.Heavenly = window.Heavenly || {};
 
     nameEl.innerText = activeChatUser;
     emptyEl.style.display = "none";
-    composer.style.display = "flex";
+    composer.style.display = "block";
 
     var messages = getChatMessages(activeChat);
 
     if (messages.length === 0) {
       messagesEl.innerHTML = '<div class="dmChatHint">Schreib deine erste Nachricht ✨</div>';
-      if (input) input.focus();
+      if (input) {
+        input.focus();
+      }
       return;
     }
 
@@ -400,6 +458,7 @@ window.Heavenly = window.Heavenly || {};
   window.openChatWithUser = async function (username) {
     var currentUser = getCurrentUser();
     if (!currentUser || !username) return;
+    if (normalizeName(currentUser) === normalizeName(username)) return;
 
     if (!Heavenly.state) {
       Heavenly.state = {};
@@ -429,22 +488,21 @@ window.Heavenly = window.Heavenly || {};
     var currentUser = getCurrentUser();
     var input = getEl("dmMessageInput");
     var activeChat = Heavenly.state ? Heavenly.state.activeChat : null;
+    var activeChatUser = Heavenly.state ? Heavenly.state.activeChatUser : null;
 
-    if (!currentUser || !input || !activeChat) return;
+    if (!currentUser || !input || !activeChat || !activeChatUser) return;
 
     var text = input.value.trim();
     if (!text) return;
 
-    var messages = getChatMessages(activeChat);
-    messages.push({
+    saveMessage(activeChat, {
       from: currentUser,
+      to: activeChatUser,
       text: text,
       time: Date.now()
     });
 
-    saveChatMessages(activeChat, messages);
     input.value = "";
-
     await refreshDmPanel();
   };
 

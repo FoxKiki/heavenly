@@ -151,7 +151,15 @@ window.Heavenly = window.Heavenly || {};
       }
     }
 
-    var filtered = friends.filter(function (name) {
+        var filtered = friends.filter(function (name) {
+      if (!name) {
+        return false;
+      }
+
+      if (normalizeName(name) === normalizeName(user)) {
+        return false;
+      }
+
       if (isBlocked(user, name)) {
         return false;
       }
