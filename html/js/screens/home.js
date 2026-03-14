@@ -1,4 +1,5 @@
 window.Heavenly = window.Heavenly || {};
+Heavenly.screens = Heavenly.screens || {};
 
 (function () {
   var pendingRemoveFriendName = null;
@@ -82,6 +83,20 @@ window.Heavenly = window.Heavenly || {};
     }
   }
 
+  function renderHomeFeed() {
+  if (!Heavenly.posts || !Heavenly.posts.store || !Heavenly.posts.render) return;
+
+  var posts = Heavenly.posts.store.getFeedPosts("home");
+  Heavenly.posts.render.renderFeed("homeFeedPosts", posts, {
+    feedType: "home"
+  });
+}
+
+  Heavenly.screens = Heavenly.screens || {};
+  Heavenly.screens.renderHomeFeed = renderHomeFeed;
+  window.renderHomeFeed = renderHomeFeed;
+
+
   window.showHome = async function (username) {
     var chip = getEl("userChipAvatar");
 
@@ -128,6 +143,8 @@ window.Heavenly = window.Heavenly || {};
     } catch (error) {
       console.error("renderFriends failed", error);
     }
+
+    renderHomeFeed();
   };
 
   window.renderFriends = async function () {
@@ -151,18 +168,10 @@ window.Heavenly = window.Heavenly || {};
       }
     }
 
-        var filtered = friends.filter(function (name) {
-      if (!name) {
-        return false;
-      }
-
-      if (normalizeName(name) === normalizeName(user)) {
-        return false;
-      }
-
-      if (isBlocked(user, name)) {
-        return false;
-      }
+    var filtered = friends.filter(function (name) {
+      if (!name) return false;
+      if (normalizeName(name) === normalizeName(user)) return false;
+      if (isBlocked(user, name)) return false;
 
       return String(name).toLowerCase().includes(query);
     });
@@ -555,13 +564,8 @@ window.Heavenly = window.Heavenly || {};
       var lower = String(name).toLowerCase();
       var parts = lower.split(" ").filter(Boolean);
 
-      if (lower.includes(query)) {
-        return true;
-      }
-
-      if (cleanQuery && lower.includes(cleanQuery)) {
-        return true;
-      }
+      if (lower.includes(query)) return true;
+      if (cleanQuery && lower.includes(cleanQuery)) return true;
 
       return parts.some(function (part) {
         return part.startsWith(query) || (cleanQuery && part.startsWith(cleanQuery));
@@ -691,7 +695,9 @@ window.Heavenly = window.Heavenly || {};
 
       var postName = document.createElement("div");
       postName.className = "searchResultName";
-      postName.innerText = rawQuery.startsWith("#") ? "Beiträge zu #" + cleanQuery : 'Beiträge zu "' + rawQuery + '"';
+      postName.innerText = rawQuery.startsWith("#")
+        ? "Beiträge zu #" + cleanQuery
+        : 'Beiträge zu "' + rawQuery + '"';
 
       var postSub = document.createElement("div");
       postSub.className = "searchResultSub";
@@ -704,10 +710,6 @@ window.Heavenly = window.Heavenly || {};
       postItem.appendChild(postMeta);
 
       list.appendChild(postItem);
-    }
-
-    if (userMatches.length === 0 && !cleanQuery) {
-      list.innerHTML = '<div class="searchEmpty">Keine passenden Treffer gefunden.</div>';
     }
 
     window.openGlobalSearchPopup();

@@ -1,4 +1,5 @@
 window.Heavenly = window.Heavenly || {};
+Heavenly.screens = Heavenly.screens || {};
 
 (function () {
   function getEl(id) {
@@ -192,13 +193,51 @@ window.Heavenly = window.Heavenly || {};
     return "Keine Angabe";
   }
 
-  function getInfoBoxData(settings) {
-    return {
-      birthday: settings && settings.birthday ? settings.birthday : "",
-      job: settings && settings.job ? settings.job : "",
-      about: settings && settings.about ? settings.about : ""
-    };
-  }
+  function renderProfileFeed(options) {
+  if (!Heavenly.posts || !Heavenly.posts.store || !Heavenly.posts.render) return;
+
+  var viewedUser = getViewedUser();
+  if (!viewedUser) return;
+
+  var profileOwner = (options && options.profileOwner) || viewedUser;
+  var posts = Heavenly.posts.store.getFeedPosts("profile", {
+    profileOwner: profileOwner
+  });
+
+  Heavenly.posts.render.renderFeed("profileFeedPosts", posts, {
+    feedType: "profile",
+    profileOwner: profileOwner
+  });
+}
+
+Heavenly.screens = Heavenly.screens || {};
+Heavenly.screens.renderProfileFeed = renderProfileFeed;
+window.renderProfileFeed = renderProfileFeed;
+
+window.submitProfilePost = function () {
+  var viewedUser = getViewedUser();
+  if (!viewedUser || !Heavenly.posts || !Heavenly.posts.create) return;
+
+  Heavenly.posts.create.submitPost({
+    inputId: "profilePostInput",
+    feedType: "profile",
+    profileOwner: viewedUser
+  });
+};
+
+  Heavenly.screens.renderProfileFeed = renderProfileFeed;
+  window.renderProfileFeed = renderProfileFeed;
+
+  window.submitProfilePost = function () {
+    var viewedUser = getViewedUser();
+    if (!viewedUser || !Heavenly.posts || !Heavenly.posts.create) return;
+
+    Heavenly.posts.create.submitPost({
+      inputId: "profilePostInput",
+      feedType: "profile",
+      profileOwner: viewedUser
+    });
+  };
 
   async function applyRelationshipInfo() {
     var user = getViewedUser();
@@ -272,30 +311,33 @@ window.Heavenly = window.Heavenly || {};
   }
 
   async function openInfoBoxPopup() {
-    var user = getCurrentUser();
-    if (!user || !Heavenly.storage) return;
+  var user = getCurrentUser();
+  if (!user || !Heavenly.storage) return;
 
-    var settings = Heavenly.storage.getSettings(user) || {};
-    var relationship = getRelationshipData(settings);
-    var info = getInfoBoxData(settings);
+  var settings = Heavenly.storage.getSettings(user) || {};
+  var relationship = getRelationshipData(settings);
+  var info = getInfoBoxData(settings);
 
-    var popup = getEl("infoBoxPopup");
-    var relationshipStatus = getEl("infoRelationshipStatus");
-    var relationshipPartner = getEl("infoRelationshipPartner");
-    var birthday = getEl("infoBirthday");
-    var job = getEl("infoJob");
-    var about = getEl("infoAbout");
+  var popup = getEl("infoBoxPopup");
+  var relationshipStatus = getEl("infoRelationshipStatus");
+  var relationshipPartner = getEl("infoRelationshipPartner");
+  var birthday = getEl("infoBirthday");
+  var job = getEl("infoJob");
+  var about = getEl("infoAbout");
+  var profileFeedTitle = getEl("infoProfileFeedTitle");
 
-    if (relationshipStatus) relationshipStatus.value = relationship.status || "";
-    if (relationshipPartner) relationshipPartner.value = relationship.partner || "";
-    if (birthday) birthday.value = info.birthday || "";
-    if (job) job.value = info.job || "";
-    if (about) about.value = info.about || "";
+  if (relationshipStatus) relationshipStatus.value = relationship.status || "";
+  if (relationshipPartner) relationshipPartner.value = relationship.partner || "";
+  if (birthday) birthday.value = info.birthday || "";
+  if (job) job.value = info.job || "";
+  if (about) about.value = info.about || "";
+  if (profileFeedTitle) profileFeedTitle.value = settings.profileFeedTitle || "";
 
-    if (popup) {
-      popup.classList.add("active");
-    }
+  if (popup) {
+    popup.classList.add("active");
   }
+}
+
 
   function closeInfoBoxPopup() {
     var popup = getEl("infoBoxPopup");
@@ -305,29 +347,33 @@ window.Heavenly = window.Heavenly || {};
   }
 
   async function saveInfoBoxSettings() {
-    var user = getCurrentUser();
-    if (!user || !Heavenly.storage) return;
+  var user = getCurrentUser();
+  if (!user || !Heavenly.storage) return;
 
-    var settings = Heavenly.storage.getSettings(user) || {};
+  var settings = Heavenly.storage.getSettings(user) || {};
 
-    settings.relationship = {
-      status: getEl("infoRelationshipStatus") ? getEl("infoRelationshipStatus").value : "",
-      partner: getEl("infoRelationshipPartner") ? getEl("infoRelationshipPartner").value.trim() : ""
-    };
+  settings.relationship = {
+    status: getEl("infoRelationshipStatus") ? getEl("infoRelationshipStatus").value : "",
+    partner: getEl("infoRelationshipPartner") ? getEl("infoRelationshipPartner").value.trim() : ""
+  };
 
-    settings.birthday = getEl("infoBirthday") ? getEl("infoBirthday").value.trim() : "";
-    settings.job = getEl("infoJob") ? getEl("infoJob").value.trim() : "";
-    settings.about = getEl("infoAbout") ? getEl("infoAbout").value.trim() : "";
+  settings.birthday = getEl("infoBirthday") ? getEl("infoBirthday").value.trim() : "";
+  settings.job = getEl("infoJob") ? getEl("infoJob").value.trim() : "";
+  settings.about = getEl("infoAbout") ? getEl("infoAbout").value.trim() : "";
+  settings.profileFeedTitle = getEl("infoProfileFeedTitle")
+    ? getEl("infoProfileFeedTitle").value.trim()
+    : "";
 
-    Heavenly.storage.setSettings(user, settings);
+  Heavenly.storage.setSettings(user, settings);
 
-    await applyProfileImages();
-    closeInfoBoxPopup();
+  await applyProfileImages();
+  closeInfoBoxPopup();
 
-    if (typeof window.setFeedback === "function") {
-      window.setFeedback("Infobox gespeichert", true);
-    }
+  if (typeof window.setFeedback === "function") {
+    window.setFeedback("Infobox gespeichert", true);
   }
+}
+
 
   async function applyHomeProfileTheme() {
     var currentUser = getCurrentUser();
@@ -357,22 +403,29 @@ window.Heavenly = window.Heavenly || {};
     document.body.style.fontFamily = homeFontFamily;
 
     var homeScreen = getEl("homeScreen");
-    if (homeScreen) {
-      homeScreen.style.backgroundImage = homeBg ? 'url("' + homeBg + '")' : "";
-      homeScreen.style.backgroundSize = homeBg ? "cover" : "";
-      homeScreen.style.backgroundPosition = homeBg ? "center" : "";
-      homeScreen.style.backgroundRepeat = homeBg ? "no-repeat" : "";
-      homeScreen.style.color = homeTextColor;
-    }
+if (homeScreen) {
+  homeScreen.style.backgroundColor = "transparent";
+  homeScreen.style.backgroundImage = homeBg ? 'url("' + homeBg + '")' : "";
+  homeScreen.style.backgroundSize = homeBg ? "cover" : "";
+  homeScreen.style.backgroundPosition = homeBg ? "center" : "";
+  homeScreen.style.backgroundRepeat = homeBg ? "no-repeat" : "";
+  homeScreen.style.color = homeTextColor;
+}
+
 
     var profileScreen = getEl("profileScreen");
-    if (profileScreen) {
-      profileScreen.style.backgroundImage = profileBg ? 'url("' + profileBg + '")' : "";
-      profileScreen.style.backgroundSize = profileBg ? "cover" : "";
-      profileScreen.style.backgroundPosition = profileBg ? "center" : "";
-      profileScreen.style.backgroundRepeat = profileBg ? "no-repeat" : "";
-      profileScreen.style.color = profileTextColor;
-    }
+if (profileScreen) {
+  profileScreen.style.backgroundColor = "transparent";
+  profileScreen.style.backgroundImage = profileBg ? 'url("' + profileBg + '")' : "";
+  profileScreen.style.backgroundSize = profileBg ? "cover" : "";
+  profileScreen.style.backgroundPosition = profileBg ? "center" : "";
+  profileScreen.style.backgroundRepeat = profileBg ? "no-repeat" : "";
+  profileScreen.style.color = profileTextColor;
+}
+
+document.body.style.backgroundColor = "black";
+
+
 
     document.querySelectorAll(
       ".homeHeader, .feedBox, .usersBox, .feedItem, .fortuneBox, .clockBox, .searchInput, .globalSearch, .homeSwitchBtn, .dmSidebar, .chatPanel, .dmSidebarItem, .activeChatInput"
@@ -488,13 +541,35 @@ window.Heavenly = window.Heavenly || {};
   }
 
   async function applyProfileImages() {
-    await applyProfileIdentity();
-    await applyAvatarImage();
-    await applyCoverImage();
-    await applyRelationshipInfo();
-    await applyInfoBoxDetails();
-    await applyHomeProfileTheme();
+  await applyProfileIdentity();
+  await applyAvatarImage();
+  await applyCoverImage();
+  await applyRelationshipInfo();
+  await applyInfoBoxDetails();
+  await applyHomeProfileTheme();
+  applyProfileFeedHeading();
+  renderProfileFeed();
+}
+
+async function applyProfileFeedHeading() {
+  var user = getViewedUser();
+  var heading = getEl("profileFeedHeading");
+  if (!user || !heading) return;
+
+  var settings = await getUserSettings(user);
+  var customTitle = settings && settings.profileFeedTitle
+    ? String(settings.profileFeedTitle).trim()
+    : "";
+
+  if (customTitle) {
+    heading.style.display = "block";
+    heading.innerText = customTitle;
+  } else {
+    heading.style.display = "none";
+    heading.innerText = "";
   }
+}
+
 
   function initProfileUploads() {
     var avatarInput = getEl("avatarUploadInput");
@@ -728,6 +803,7 @@ window.Heavenly = window.Heavenly || {};
     var ownSettingsBtn = getEl("profileSettingsBtn");
     var ownDmBtn = getEl("profileDmBtn");
     var foreignActionsBox = getEl("foreignProfileActionsBox");
+    var profilePostCreator = getEl("profilePostCreator");
 
     if (ownSettingsBtn) {
       ownSettingsBtn.style.display = isOwnProfile() ? "block" : "none";
@@ -740,6 +816,10 @@ window.Heavenly = window.Heavenly || {};
 
     if (foreignActionsBox) {
       foreignActionsBox.style.display = isOwnProfile() ? "none" : "flex";
+    }
+
+    if (profilePostCreator) {
+      profilePostCreator.style.display = isOwnProfile() ? "flex" : "none";
     }
 
     closeForeignProfileMenu();
