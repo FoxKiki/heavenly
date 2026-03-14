@@ -191,6 +191,39 @@ window.Heavenly = window.Heavenly || {};
     return hours + ":" + minutes;
   }
 
+  function getMessagePreview(message, currentUser) {
+    if (!message) {
+      return "Noch keine Nachrichten";
+    }
+
+    var prefix =
+      normalizeName(message.from) === normalizeName(currentUser)
+        ? "Du: "
+        : "";
+
+    if (message.type === "image") {
+      return prefix + "Bild gesendet";
+    }
+
+    if (message.type === "imageLink") {
+      return prefix + "Bild/GIF-Link gesendet";
+    }
+
+    if (message.type === "emote") {
+      return prefix + "Emote gesendet";
+    }
+
+    var text = String(message.text || "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!text) {
+      return prefix + "Nachricht";
+    }
+
+    return prefix + text;
+  }
+
   function readFileAsDataUrl(file) {
     return new Promise(function (resolve, reject) {
       if (!file) {
@@ -700,25 +733,7 @@ window.Heavenly = window.Heavenly || {};
 
       var preview = document.createElement("div");
       preview.className = "dmConversationPreview";
-
-      if (row.lastMessage) {
-        var prefix =
-          normalizeName(row.lastMessage.from) === normalizeName(currentUser)
-            ? "Du: "
-            : "";
-
-        if (row.lastMessage.type === "image") {
-          preview.innerText = prefix + "Bild gesendet";
-        } else if (row.lastMessage.type === "imageLink") {
-          preview.innerText = prefix + "Bild/GIF-Link gesendet";
-        } else if (row.lastMessage.type === "emote") {
-          preview.innerText = prefix + "Emote gesendet";
-        } else {
-          preview.innerText = prefix + (row.lastMessage.text || "");
-        }
-      } else {
-        preview.innerText = "Noch keine Nachrichten";
-      }
+      preview.innerText = getMessagePreview(row.lastMessage, currentUser);
 
       meta.appendChild(top);
       meta.appendChild(preview);
