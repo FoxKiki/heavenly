@@ -73,8 +73,15 @@ Heavenly.screens = Heavenly.screens || {};
   function openProfilePreview(name) {
     if (typeof window.openUserProfile === "function") {
       window.openUserProfile(name);
-      window.closeGlobalSearchPopup();
-      window.closeFriendRequests();
+
+      if (typeof window.closeGlobalSearchPopup === "function") {
+        window.closeGlobalSearchPopup();
+      }
+
+      if (typeof window.closeFriendRequests === "function") {
+        window.closeFriendRequests();
+      }
+
       return;
     }
 
@@ -83,19 +90,55 @@ Heavenly.screens = Heavenly.screens || {};
     }
   }
 
-  function renderHomeFeed() {
-  if (!Heavenly.posts || !Heavenly.posts.store || !Heavenly.posts.render) return;
+  async function renderHomeFeed() {
+    if (!Heavenly.posts || !Heavenly.posts.store || !Heavenly.posts.render) return;
 
-  var posts = Heavenly.posts.store.getFeedPosts("home");
-  Heavenly.posts.render.renderFeed("homeFeedPosts", posts, {
-    feedType: "home"
-  });
-}
+    var posts = Heavenly.posts.store.getFeedPosts("home") || [];
 
-  Heavenly.screens = Heavenly.screens || {};
+    if (Heavenly.api && Heavenly.api.getAvatar) {
+      var cache = {};
+
+      async function getAvatar(username) {
+        var key = String(username || "");
+        if (!key) return "";
+
+        if (cache[key] !== undefined) {
+          return cache[key];
+        }
+
+        try {
+          var result = await Heavenly.api.getAvatar(key);
+          cache[key] = result && result.ok && result.data ? result.data : "";
+          return cache[key];
+        } catch (error) {
+          cache[key] = "";
+          console.warn("Home feed avatar load failed", error);
+          return "";
+        }
+      }
+
+      for (var i = 0; i < posts.length; i++) {
+        if (!posts[i].authorAvatar) {
+          posts[i].authorAvatar = await getAvatar(posts[i].authorUsername);
+        }
+
+        posts[i].comments = Array.isArray(posts[i].comments) ? posts[i].comments : [];
+
+        for (var j = 0; j < posts[i].comments.length; j++) {
+          if (!posts[i].comments[j].authorAvatar) {
+            posts[i].comments[j].authorAvatar = await getAvatar(posts[i].comments[j].authorUsername);
+          }
+        }
+      }
+    }
+
+    Heavenly.posts.render.renderFeed("homeFeedPosts", posts, {
+      feedType: "home"
+    });
+  }
+
   Heavenly.screens.renderHomeFeed = renderHomeFeed;
   window.renderHomeFeed = renderHomeFeed;
-
 
   window.showHome = async function (username) {
     var chip = getEl("userChipAvatar");
@@ -144,7 +187,11 @@ Heavenly.screens = Heavenly.screens || {};
       console.error("renderFriends failed", error);
     }
 
-    renderHomeFeed();
+    try {
+      await renderHomeFeed();
+    } catch (error) {
+      console.error("renderHomeFeed failed", error);
+    }
   };
 
   window.renderFriends = async function () {
@@ -162,9 +209,13 @@ Heavenly.screens = Heavenly.screens || {};
     var friends = [];
 
     if (Heavenly.api && Heavenly.api.getFriends) {
-      var result = await Heavenly.api.getFriends(user);
-      if (result && result.ok && Array.isArray(result.data)) {
-        friends = result.data;
+      try {
+        var result = await Heavenly.api.getFriends(user);
+        if (result && result.ok && Array.isArray(result.data)) {
+          friends = result.data;
+        }
+      } catch (error) {
+        console.warn("Friends load failed", error);
       }
     }
 
@@ -275,7 +326,7 @@ Heavenly.screens = Heavenly.screens || {};
       await Heavenly.api.setFriends(user, ["Max", "Sophie", "Luca", "Nina", "Jayden"]);
     }
 
-    window.renderFriends();
+    await window.renderFriends();
   };
 
   window.addDemoFriendRequests = function () {
@@ -415,7 +466,7 @@ Heavenly.screens = Heavenly.screens || {};
     }
 
     window.renderFriendRequests();
-    window.renderFriends();
+    await window.renderFriends();
     updateFriendRequestDot();
 
     if (typeof window.setFeedback === "function") {
@@ -498,7 +549,7 @@ Heavenly.screens = Heavenly.screens || {};
 
     var removedName = pendingRemoveFriendName;
     window.closeRemoveFriendPopup();
-    window.renderFriends();
+    await window.renderFriends();
 
     if (typeof window.setFeedback === "function") {
       window.setFeedback(removedName + " entfernt", true);
@@ -719,12 +770,24 @@ Heavenly.screens = Heavenly.screens || {};
   window.openDMs = function () {
     if (typeof window.openDmOverlay === "function") {
       window.openDmOverlay();
+      return;
+    }
+
+    var panel = getEl("dmPanel");
+    if (panel) {
+      panel.classList.add("active");
     }
   };
 
   window.closeDMs = function () {
     if (typeof window.closeDmOverlay === "function") {
       window.closeDmOverlay();
+      return;
+    }
+
+    var panel = getEl("dmPanel");
+    if (panel) {
+      panel.classList.remove("active");
     }
   };
 

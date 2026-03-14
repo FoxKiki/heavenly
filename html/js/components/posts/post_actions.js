@@ -5,7 +5,7 @@ Heavenly.posts = Heavenly.posts || {};
   function rerenderFeed(feedType, options) {
     if (feedType === "profile") {
       if (Heavenly.screens && typeof Heavenly.screens.renderProfileFeed === "function") {
-        Heavenly.screens.renderProfileFeed(options);
+        Heavenly.screens.renderProfileFeed(options || {});
       }
       return;
     }
@@ -22,6 +22,13 @@ Heavenly.posts = Heavenly.posts || {};
     rerenderFeed(feedType, options);
   }
 
+  function toggleCommentLike(postId, commentId, feedType, options) {
+    if (!Heavenly.posts || !Heavenly.posts.store) return;
+
+    Heavenly.posts.store.toggleCommentLike(postId, commentId);
+    rerenderFeed(feedType, options);
+  }
+
   function submitComment(postId, inputId, feedType, options) {
     var input = document.getElementById(inputId);
     if (!input) return;
@@ -35,8 +42,27 @@ Heavenly.posts = Heavenly.posts || {};
     rerenderFeed(feedType, options);
   }
 
+  function editPost(postId, currentText, feedType, options) {
+    var nextText = window.prompt("Beitrag bearbeiten:", currentText || "");
+    if (nextText === null) return;
+
+    Heavenly.posts.store.editPost(postId, nextText);
+    rerenderFeed(feedType, options);
+  }
+
+  function deletePost(postId, feedType, options) {
+    var ok = window.confirm("Beitrag wirklich löschen?");
+    if (!ok) return;
+
+    Heavenly.posts.store.deletePost(postId);
+    rerenderFeed(feedType, options);
+  }
+
   Heavenly.posts.actions = {
     toggleLike: toggleLike,
-    submitComment: submitComment
+    toggleCommentLike: toggleCommentLike,
+    submitComment: submitComment,
+    editPost: editPost,
+    deletePost: deletePost
   };
 })();

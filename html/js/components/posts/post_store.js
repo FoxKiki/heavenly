@@ -84,7 +84,18 @@ Heavenly.posts = Heavenly.posts || {};
         images: ensureArray(post.images),
         mentions: ensureArray(post.mentions),
         likes: ensureArray(post.likes),
-        comments: ensureArray(post.comments),
+        comments: ensureArray(post.comments).map(function (comment) {
+          return {
+            id: comment.id || makeId("comment"),
+            authorUsername: comment.authorUsername || "unknown",
+            authorDisplayName: comment.authorDisplayName || comment.authorUsername || "Unknown",
+            authorAvatar: comment.authorAvatar || "",
+            text: String(comment.text || ""),
+            mentions: ensureArray(comment.mentions),
+            likes: ensureArray(comment.likes),
+            createdAt: comment.createdAt || Date.now()
+          };
+        }),
         visibility: post.visibility || "public",
         createdAt: post.createdAt || Date.now()
       };
@@ -144,6 +155,25 @@ Heavenly.posts = Heavenly.posts || {};
     return changedPost;
   }
 
+  function deletePost(postId) {
+    var posts = getPosts().filter(function (post) {
+      return post.id !== postId;
+    });
+
+    savePosts(posts);
+  }
+
+  function editPost(postId, text) {
+    var content = String(text || "").trim();
+    if (!content) return null;
+
+    return updatePost(postId, function (post) {
+      post.text = content;
+      post.mentions = extractMentions(content);
+      return post;
+    });
+  }
+
   function toggleLike(postId, username) {
     var activeUser = username || getCurrentUser();
     var userKey = normalizeName(
@@ -188,10 +218,42 @@ Heavenly.posts = Heavenly.posts || {};
         authorAvatar: author.avatar,
         text: content,
         mentions: extractMentions(content),
+        likes: [],
         createdAt: Date.now()
       });
 
       post.comments = comments;
+      return post;
+    });
+  }
+
+  function toggleCommentLike(postId, commentId, username) {
+    var activeUser = username || getCurrentUser();
+    var userKey = normalizeName(
+      typeof activeUser === "string"
+        ? activeUser
+        : (activeUser && (activeUser.username || activeUser.name))
+    );
+
+    if (!userKey) return null;
+
+    return updatePost(postId, function (post) {
+      post.comments = ensureArray(post.comments).map(function (comment) {
+        if (comment.id !== commentId) return comment;
+
+        var likes = ensureArray(comment.likes).slice();
+        var index = likes.indexOf(userKey);
+
+        if (index >= 0) {
+          likes.splice(index, 1);
+        } else {
+          likes.push(userKey);
+        }
+
+        comment.likes = likes;
+        return comment;
+      });
+
       return post;
     });
   }
@@ -215,8 +277,11 @@ Heavenly.posts = Heavenly.posts || {};
     getPosts: getPosts,
     savePosts: savePosts,
     createPost: createPost,
+    editPost: editPost,
+    deletePost: deletePost,
     toggleLike: toggleLike,
     addComment: addComment,
+    toggleCommentLike: toggleCommentLike,
     getFeedPosts: getFeedPosts,
     extractMentions: extractMentions
   };

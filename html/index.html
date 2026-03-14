@@ -78,20 +78,30 @@
 
     <div class="homeContent">
       <div class="feedBox">
-
         <div class="postCreator">
-          <input
-            id="homePostInput"
-            type="text"
-            placeholder="Was möchtest du posten?"
-          />
-          <button
-            type="button"
-            onclick="Heavenly.posts.create.submitPost({ inputId: 'homePostInput', feedType: 'home' })"
-          >
-            Posten
-          </button>
+        <button
+        type="button"
+        class="dmToolBtn"
+        onclick="openDmMedia('emoji', 'homePostInput')"
+        title="Emoji / Emotes"
+        >
+        😊
+        </button>
+
+       <input
+       id="homePostInput"
+       type="text"
+       placeholder="Was möchtest du posten?"
+       />
+
+        <button
+        type="button"
+        onclick="Heavenly.posts.create.submitPost({ inputId: 'homePostInput', feedType: 'home' })"
+        >
+         Posten
+        </button>
         </div>
+
 
         <div id="homeFeedPosts" class="postFeed"></div>
       </div>
@@ -285,10 +295,9 @@
         </div>
 
         <div class="profileMainBox">
-         <div id="profileFeedHeading" class="profileFeedHeading" style="display:none;"></div>
+          <div id="profileFeedHeading" class="profileFeedHeading" style="display:none;"></div>
 
-            <div class="postCreator" id="profilePostCreator">
-
+          <div class="postCreator" id="profilePostCreator">
             <input
               id="profilePostInput"
               type="text"
@@ -490,11 +499,11 @@
 
       <label class="hpField">
         <span>Home Hintergrundbild (URL)</span>
-        <input id="hpHomeBg" type="text" placeholder="https://..." />
+        <input id="hpHomeBg" type="text" placeholder="Standard bleibt aktiv" disabled />
       </label>
 
       <label class="hpField">
-        <span>Profil Hintergrundbild (URL)</span>
+        <span>Profil Hintergrundbild (deaktiviert)</span>
         <input id="hpProfileBg" type="text" placeholder="https://..." />
       </label>
 
@@ -547,15 +556,14 @@
       </label>
 
       <label class="hpField">
-       <span>Profil-Überschrift</span>
-       <input
-        id="infoProfileFeedTitle"
-        type="text"
-       placeholder="z. B. Meine Pinnwand"
-        maxlength="60"
+        <span>Profil-Überschrift</span>
+        <input
+          id="infoProfileFeedTitle"
+          type="text"
+          placeholder="z. B. Meine Pinnwand"
+          maxlength="60"
         />
-       </label>
-
+      </label>
 
       <div class="hpActions">
         <button type="button" onclick="saveInfoBoxSettings()">Speichern</button>

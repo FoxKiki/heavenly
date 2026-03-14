@@ -3,6 +3,12 @@ window.Heavenly = window.Heavenly || {};
 (function () {
   var ignoreNextOutsideClick = false;
   var lastMediaTab = "emoji";
+  var pickerContext = {
+    mode: "dm",
+    inputId: "dmMessageInput",
+    onEmojiSelect: null,
+    onEmoteSelect: null
+  };
 
   function getEl(id) {
     return document.getElementById(id);
@@ -15,15 +21,46 @@ window.Heavenly = window.Heavenly || {};
     }
   }
 
-  function insertIntoDmInput(value) {
-    var input = getEl("dmMessageInput");
+  function focusInputById(inputId) {
+    var input = getEl(inputId);
+    if (!input) return null;
+
+    input.focus();
+
+    if (typeof input.selectionStart === "number" && typeof input.selectionEnd === "number") {
+      var end = input.value ? input.value.length : 0;
+      input.selectionStart = end;
+      input.selectionEnd = end;
+    }
+
+    return input;
+  }
+
+  function insertIntoInput(inputId, value) {
+    var input = focusInputById(inputId);
     if (!input) return;
 
-    input.value = (input.value || "") + value;
+    var currentValue = String(input.value || "");
+    var insertValue = String(value || "");
+
+    if (typeof input.selectionStart === "number" && typeof input.selectionEnd === "number") {
+      var start = input.selectionStart;
+      var end = input.selectionEnd;
+
+      input.value = currentValue.slice(0, start) + insertValue + currentValue.slice(end);
+
+      var nextPos = start + insertValue.length;
+      input.selectionStart = nextPos;
+      input.selectionEnd = nextPos;
+    } else {
+      input.value = currentValue + insertValue;
+    }
+
+    input.dispatchEvent(new Event("input", { bubbles: true }));
     input.focus();
   }
 
-  function sendEmoteMessage(emote) {
+  function sendDmEmote(emote) {
     if (!emote) return;
 
     if (typeof window.sendActiveEmote === "function") {
@@ -61,6 +98,33 @@ window.Heavenly = window.Heavenly || {};
     return preview;
   }
 
+  function handleEmojiSelect(emoji) {
+    if (pickerContext && typeof pickerContext.onEmojiSelect === "function") {
+      pickerContext.onEmojiSelect(emoji);
+      closeMediaPicker();
+      return;
+    }
+
+    insertIntoInput((pickerContext && pickerContext.inputId) || "dmMessageInput", emoji);
+    closeMediaPicker();
+  }
+
+  function handleEmoteSelect(emote) {
+    if (pickerContext && typeof pickerContext.onEmoteSelect === "function") {
+      pickerContext.onEmoteSelect(emote);
+      closeMediaPicker();
+      return;
+    }
+
+    if (pickerContext && pickerContext.mode === "dm") {
+      sendDmEmote(emote);
+      return;
+    }
+
+    insertIntoInput((pickerContext && pickerContext.inputId) || "dmMessageInput", " " + (emote.label || emote.id || "") + " ");
+    closeMediaPicker();
+  }
+
   function renderEmojiTab(body) {
     var emojis = (Heavenly.media && Heavenly.media.emojis) || [];
 
@@ -82,8 +146,7 @@ window.Heavenly = window.Heavenly || {};
 
       btn.onclick = function (event) {
         event.stopPropagation();
-        insertIntoDmInput(emoji);
-        closeMediaPicker();
+        handleEmojiSelect(emoji);
       };
 
       body.appendChild(btn);
@@ -123,7 +186,7 @@ window.Heavenly = window.Heavenly || {};
 
       btn.onclick = function (event) {
         event.stopPropagation();
-        sendEmoteMessage(emote);
+        handleEmoteSelect(emote);
       };
 
       body.appendChild(btn);
@@ -193,8 +256,15 @@ window.Heavenly = window.Heavenly || {};
     renderTab(initialTab || lastMediaTab || "emoji");
   }
 
-  function toggleMediaPicker(tabName) {
+  function openPicker(tabName, context) {
     var existing = getEl("heavenlyMediaPicker");
+
+    pickerContext = Object.assign({
+      mode: "dm",
+      inputId: "dmMessageInput",
+      onEmojiSelect: null,
+      onEmoteSelect: null
+    }, context || {});
 
     ignoreNextOutsideClick = true;
 
@@ -229,12 +299,16 @@ window.Heavenly = window.Heavenly || {};
     }
   });
 
-  window.openEmojiPicker = function () {
-    toggleMediaPicker("emoji");
+  window.openEmojiPicker = function (inputId, options) {
+    openPicker("emoji", Object.assign({}, options || {}, {
+      inputId: inputId || "dmMessageInput"
+    }));
   };
 
-  window.openEmotePicker = function () {
-    toggleMediaPicker("emote");
+  window.openEmotePicker = function (inputId, options) {
+    openPicker("emote", Object.assign({}, options || {}, {
+      inputId: inputId || "dmMessageInput"
+    }));
   };
 
   window.closeMediaPicker = closeMediaPicker;

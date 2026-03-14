@@ -2,6 +2,8 @@ window.Heavenly = window.Heavenly || {};
 Heavenly.screens = Heavenly.screens || {};
 
 (function () {
+  var THEME_KEY_PREFIX = "heavenly_theme_";
+
   function getEl(id) {
     return document.getElementById(id);
   }
@@ -108,6 +110,25 @@ Heavenly.screens = Heavenly.screens || {};
     reader.readAsDataURL(file);
   }
 
+  function getThemeCacheKey(user) {
+    return THEME_KEY_PREFIX + String(user || "");
+  }
+
+  function loadThemeFallback(user) {
+    try {
+      var raw = localStorage.getItem(getThemeCacheKey(user));
+      return raw ? JSON.parse(raw) : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function saveThemeFallback(user, theme) {
+    try {
+      localStorage.setItem(getThemeCacheKey(user), JSON.stringify(theme || {}));
+    } catch (error) {}
+  }
+
   async function getProfileData(user) {
     if (!user || !Heavenly.api || !Heavenly.api.getProfile) {
       return null;
@@ -122,26 +143,48 @@ Heavenly.screens = Heavenly.screens || {};
   }
 
   async function getUserSettings(user) {
+    var localSettings = Heavenly.storage && Heavenly.storage.getSettings
+      ? (Heavenly.storage.getSettings(user) || {})
+      : {};
+
     var profile = await getProfileData(user);
-    return profile && profile.settings ? profile.settings : {};
+    var apiSettings = profile && profile.settings ? profile.settings : {};
+
+    return Object.assign({}, apiSettings, localSettings);
   }
 
   async function getThemeSettings(user) {
+    var fallbackTheme = loadThemeFallback(user);
+
     if (!user || !Heavenly.api || !Heavenly.api.getTheme) {
-      return {};
+      return fallbackTheme;
     }
 
-    var result = await Heavenly.api.getTheme(user);
-    if (!result || !result.ok) {
-      return {};
+    try {
+      var result = await Heavenly.api.getTheme(user);
+      if (result && result.ok && result.data) {
+        saveThemeFallback(user, result.data || {});
+        return Object.assign({}, fallbackTheme, result.data || {});
+      }
+    } catch (error) {
+      console.warn("getTheme fallback used", error);
     }
 
-    return result.data || {};
+    return fallbackTheme;
   }
 
   async function setThemeSettings(user, theme) {
-    if (!user || !Heavenly.api || !Heavenly.api.saveTheme) return;
-    await Heavenly.api.saveTheme(user, theme || {});
+    if (!user) return;
+
+    saveThemeFallback(user, theme || {});
+
+    if (!Heavenly.api || !Heavenly.api.saveTheme) return;
+
+    try {
+      await Heavenly.api.saveTheme(user, theme || {});
+    } catch (error) {
+      console.warn("saveTheme fallback used", error);
+    }
   }
 
   async function getAvatarData(user) {
@@ -149,8 +192,12 @@ Heavenly.screens = Heavenly.screens || {};
       return null;
     }
 
-    var result = await Heavenly.api.getAvatar(user);
-    return result && result.ok ? (result.data || null) : null;
+    try {
+      var result = await Heavenly.api.getAvatar(user);
+      return result && result.ok ? (result.data || null) : null;
+    } catch (error) {
+      return null;
+    }
   }
 
   async function getCoverData(user) {
@@ -158,8 +205,12 @@ Heavenly.screens = Heavenly.screens || {};
       return null;
     }
 
-    var result = await Heavenly.api.getCover(user);
-    return result && result.ok ? (result.data || null) : null;
+    try {
+      var result = await Heavenly.api.getCover(user);
+      return result && result.ok ? (result.data || null) : null;
+    } catch (error) {
+      return null;
+    }
   }
 
   async function saveAvatarData(user, dataUrl) {
@@ -193,37 +244,117 @@ Heavenly.screens = Heavenly.screens || {};
     return "Keine Angabe";
   }
 
-  function renderProfileFeed(options) {
-  if (!Heavenly.posts || !Heavenly.posts.store || !Heavenly.posts.render) return;
+  function getInfoBoxData(settings) {
+    return {
+      birthday: settings && settings.birthday ? settings.birthday : "",
+      job: settings && settings.job ? settings.job : "",
+      about: settings && settings.about ? settings.about : ""
+    };
+  }
 
-  var viewedUser = getViewedUser();
-  if (!viewedUser) return;
+  function applyProfilePopupLabels() {
+    var popup = getEl("homeProfilePopup");
+    if (popup) {
+      var title = popup.querySelector("h2");
+      if (title) {
+        title.innerText = "Profile";
+      }
+    }
 
-  var profileOwner = (options && options.profileOwner) || viewedUser;
-  var posts = Heavenly.posts.store.getFeedPosts("profile", {
-    profileOwner: profileOwner
-  });
+    var menu = getEl("profileMenu");
+    if (menu) {
+      var firstButton = menu.querySelector("button");
+      if (firstButton) {
+        firstButton.innerText = "Profile";
+      }
+    }
 
-  Heavenly.posts.render.renderFeed("profileFeedPosts", posts, {
-    feedType: "profile",
-    profileOwner: profileOwner
-  });
-}
+    var hpHomeBg = getEl("hpHomeBg");
+    if (hpHomeBg && hpHomeBg.parentElement) {
+      hpHomeBg.parentElement.style.display = "none";
+    }
 
-Heavenly.screens = Heavenly.screens || {};
-Heavenly.screens.renderProfileFeed = renderProfileFeed;
-window.renderProfileFeed = renderProfileFeed;
+    var hpProfileBg = getEl("hpProfileBg");
+    if (hpProfileBg && hpProfileBg.parentElement) {
+      var labelText = hpProfileBg.parentElement.querySelector("span");
+      if (labelText) {
+        labelText.innerText = "Profil Hintergrundbild";
+      }
+    }
+  }
 
-window.submitProfilePost = function () {
-  var viewedUser = getViewedUser();
-  if (!viewedUser || !Heavenly.posts || !Heavenly.posts.create) return;
+  async function enrichPostsWithAvatars(posts) {
+    posts = Array.isArray(posts) ? posts : [];
 
-  Heavenly.posts.create.submitPost({
-    inputId: "profilePostInput",
-    feedType: "profile",
-    profileOwner: viewedUser
-  });
-};
+    if (!Heavenly.api || !Heavenly.api.getAvatar) {
+      return posts;
+    }
+
+    var cache = {};
+
+    async function getAvatar(username) {
+      var key = String(username || "");
+      if (!key) return "";
+
+      if (cache[key] !== undefined) {
+        return cache[key];
+      }
+
+      try {
+        var result = await Heavenly.api.getAvatar(key);
+        cache[key] = result && result.ok && result.data ? result.data : "";
+        return cache[key];
+      } catch (error) {
+        cache[key] = "";
+        return "";
+      }
+    }
+
+    var enriched = [];
+
+    for (var i = 0; i < posts.length; i++) {
+      var post = Object.assign({}, posts[i]);
+
+      if (!post.authorAvatar) {
+        post.authorAvatar = await getAvatar(post.authorUsername);
+      }
+
+      post.comments = Array.isArray(post.comments) ? post.comments.slice() : [];
+
+      for (var j = 0; j < post.comments.length; j++) {
+        var comment = Object.assign({}, post.comments[j]);
+
+        if (!comment.authorAvatar) {
+          comment.authorAvatar = await getAvatar(comment.authorUsername);
+        }
+
+        post.comments[j] = comment;
+      }
+
+      enriched.push(post);
+    }
+
+    return enriched;
+  }
+
+  async function renderProfileFeed(options) {
+    if (!Heavenly.posts || !Heavenly.posts.store || !Heavenly.posts.render) return;
+
+    var viewedUser = getViewedUser();
+    if (!viewedUser) return;
+
+    var profileOwner = (options && options.profileOwner) || viewedUser;
+    var posts = Heavenly.posts.store.getFeedPosts("profile", {
+      profileOwner: profileOwner
+    });
+
+    posts = await enrichPostsWithAvatars(posts);
+
+    Heavenly.posts.render.renderFeed("profileFeedPosts", posts, {
+      feedType: "profile",
+      profileOwner: profileOwner
+    });
+  }
 
   Heavenly.screens.renderProfileFeed = renderProfileFeed;
   window.renderProfileFeed = renderProfileFeed;
@@ -310,34 +441,52 @@ window.submitProfilePost = function () {
     }
   }
 
-  async function openInfoBoxPopup() {
-  var user = getCurrentUser();
-  if (!user || !Heavenly.storage) return;
+  async function applyProfileFeedHeading() {
+    var user = getViewedUser();
+    var heading = getEl("profileFeedHeading");
+    if (!user || !heading) return;
 
-  var settings = Heavenly.storage.getSettings(user) || {};
-  var relationship = getRelationshipData(settings);
-  var info = getInfoBoxData(settings);
+    var settings = await getUserSettings(user);
+    var customTitle = settings && settings.profileFeedTitle
+      ? String(settings.profileFeedTitle).trim()
+      : "";
 
-  var popup = getEl("infoBoxPopup");
-  var relationshipStatus = getEl("infoRelationshipStatus");
-  var relationshipPartner = getEl("infoRelationshipPartner");
-  var birthday = getEl("infoBirthday");
-  var job = getEl("infoJob");
-  var about = getEl("infoAbout");
-  var profileFeedTitle = getEl("infoProfileFeedTitle");
-
-  if (relationshipStatus) relationshipStatus.value = relationship.status || "";
-  if (relationshipPartner) relationshipPartner.value = relationship.partner || "";
-  if (birthday) birthday.value = info.birthday || "";
-  if (job) job.value = info.job || "";
-  if (about) about.value = info.about || "";
-  if (profileFeedTitle) profileFeedTitle.value = settings.profileFeedTitle || "";
-
-  if (popup) {
-    popup.classList.add("active");
+    if (customTitle) {
+      heading.style.display = "block";
+      heading.innerText = customTitle;
+    } else {
+      heading.style.display = "none";
+      heading.innerText = "";
+    }
   }
-}
 
+  async function openInfoBoxPopup() {
+    var user = getCurrentUser();
+    if (!user || !Heavenly.storage) return;
+
+    var settings = Heavenly.storage.getSettings(user) || {};
+    var relationship = getRelationshipData(settings);
+    var info = getInfoBoxData(settings);
+
+    var popup = getEl("infoBoxPopup");
+    var relationshipStatus = getEl("infoRelationshipStatus");
+    var relationshipPartner = getEl("infoRelationshipPartner");
+    var birthday = getEl("infoBirthday");
+    var job = getEl("infoJob");
+    var about = getEl("infoAbout");
+    var profileFeedTitle = getEl("infoProfileFeedTitle");
+
+    if (relationshipStatus) relationshipStatus.value = relationship.status || "";
+    if (relationshipPartner) relationshipPartner.value = relationship.partner || "";
+    if (birthday) birthday.value = info.birthday || "";
+    if (job) job.value = info.job || "";
+    if (about) about.value = info.about || "";
+    if (profileFeedTitle) profileFeedTitle.value = settings.profileFeedTitle || "";
+
+    if (popup) {
+      popup.classList.add("active");
+    }
+  }
 
   function closeInfoBoxPopup() {
     var popup = getEl("infoBoxPopup");
@@ -347,93 +496,69 @@ window.submitProfilePost = function () {
   }
 
   async function saveInfoBoxSettings() {
-  var user = getCurrentUser();
-  if (!user || !Heavenly.storage) return;
+    var user = getCurrentUser();
+    if (!user || !Heavenly.storage) return;
 
-  var settings = Heavenly.storage.getSettings(user) || {};
+    var settings = Heavenly.storage.getSettings(user) || {};
 
-  settings.relationship = {
-    status: getEl("infoRelationshipStatus") ? getEl("infoRelationshipStatus").value : "",
-    partner: getEl("infoRelationshipPartner") ? getEl("infoRelationshipPartner").value.trim() : ""
-  };
+    settings.relationship = {
+      status: getEl("infoRelationshipStatus") ? getEl("infoRelationshipStatus").value : "",
+      partner: getEl("infoRelationshipPartner") ? getEl("infoRelationshipPartner").value.trim() : ""
+    };
 
-  settings.birthday = getEl("infoBirthday") ? getEl("infoBirthday").value.trim() : "";
-  settings.job = getEl("infoJob") ? getEl("infoJob").value.trim() : "";
-  settings.about = getEl("infoAbout") ? getEl("infoAbout").value.trim() : "";
-  settings.profileFeedTitle = getEl("infoProfileFeedTitle")
-    ? getEl("infoProfileFeedTitle").value.trim()
-    : "";
+    settings.birthday = getEl("infoBirthday") ? getEl("infoBirthday").value.trim() : "";
+    settings.job = getEl("infoJob") ? getEl("infoJob").value.trim() : "";
+    settings.about = getEl("infoAbout") ? getEl("infoAbout").value.trim() : "";
+    settings.profileFeedTitle = getEl("infoProfileFeedTitle")
+      ? getEl("infoProfileFeedTitle").value.trim()
+      : "";
 
-  Heavenly.storage.setSettings(user, settings);
+    Heavenly.storage.setSettings(user, settings);
 
-  await applyProfileImages();
-  closeInfoBoxPopup();
+    await applyProfileImages();
+    closeInfoBoxPopup();
 
-  if (typeof window.setFeedback === "function") {
-    window.setFeedback("Infobox gespeichert", true);
+    if (typeof window.setFeedback === "function") {
+      window.setFeedback("Infobox gespeichert", true);
+    }
   }
-}
-
 
   async function applyHomeProfileTheme() {
     var currentUser = getCurrentUser();
     if (!currentUser) return;
 
-    var currentTheme = await getThemeSettings(currentUser);
     var viewedUser = getViewedUser();
     var viewedTheme = viewedUser ? await getThemeSettings(viewedUser) : {};
 
-    var homeBoxColor = currentTheme.boxColor || "#8b5cf6";
-    var homePanelColor = currentTheme.panelColor || "#4b0010";
-    var homeTextColor = currentTheme.textColor || "#ffffff";
-    var homeFontFamily = currentTheme.fontFamily || "Arial, sans-serif";
-    var homeBg = currentTheme.homeBg || "";
-
-    var profileBoxColor = viewedTheme.boxColor || homeBoxColor;
-    var profilePanelColor = viewedTheme.panelColor || homePanelColor;
-    var profileTextColor = viewedTheme.textColor || homeTextColor;
+    var profileBoxColor = viewedTheme.boxColor || "#8b5cf6";
+    var profilePanelColor = viewedTheme.panelColor || "#4b0010";
+    var profileTextColor = viewedTheme.textColor || "#ffffff";
     var profileBg = viewedTheme.profileBg || "";
-
-    var homeBorderColor = hexToRgba(homeBoxColor, 0.75);
-    var homeBoxBg = hexToRgba(homePanelColor, 0.72);
 
     var profileBorderColor = hexToRgba(profileBoxColor, 0.75);
     var profileBoxBg = hexToRgba(profilePanelColor, 0.72);
 
-    document.body.style.fontFamily = homeFontFamily;
+    document.body.style.backgroundColor = "black";
 
     var homeScreen = getEl("homeScreen");
-if (homeScreen) {
-  homeScreen.style.backgroundColor = "transparent";
-  homeScreen.style.backgroundImage = homeBg ? 'url("' + homeBg + '")' : "";
-  homeScreen.style.backgroundSize = homeBg ? "cover" : "";
-  homeScreen.style.backgroundPosition = homeBg ? "center" : "";
-  homeScreen.style.backgroundRepeat = homeBg ? "no-repeat" : "";
-  homeScreen.style.color = homeTextColor;
-}
-
+    if (homeScreen) {
+      homeScreen.style.backgroundColor = "";
+      homeScreen.style.color = "";
+      homeScreen.style.backgroundImage = "";
+      homeScreen.style.backgroundSize = "";
+      homeScreen.style.backgroundPosition = "";
+      homeScreen.style.backgroundRepeat = "";
+    }
 
     var profileScreen = getEl("profileScreen");
-if (profileScreen) {
-  profileScreen.style.backgroundColor = "transparent";
-  profileScreen.style.backgroundImage = profileBg ? 'url("' + profileBg + '")' : "";
-  profileScreen.style.backgroundSize = profileBg ? "cover" : "";
-  profileScreen.style.backgroundPosition = profileBg ? "center" : "";
-  profileScreen.style.backgroundRepeat = profileBg ? "no-repeat" : "";
-  profileScreen.style.color = profileTextColor;
-}
-
-document.body.style.backgroundColor = "black";
-
-
-
-    document.querySelectorAll(
-      ".homeHeader, .feedBox, .usersBox, .feedItem, .fortuneBox, .clockBox, .searchInput, .globalSearch, .homeSwitchBtn, .dmSidebar, .chatPanel, .dmSidebarItem, .activeChatInput"
-    ).forEach(function (element) {
-      element.style.background = homeBoxBg;
-      element.style.borderColor = homeBorderColor;
-      element.style.color = homeTextColor;
-    });
+    if (profileScreen) {
+      profileScreen.style.backgroundColor = "transparent";
+      profileScreen.style.backgroundImage = profileBg ? 'url("' + profileBg + '")' : "";
+      profileScreen.style.backgroundSize = profileBg ? "cover" : "";
+      profileScreen.style.backgroundPosition = profileBg ? "center" : "";
+      profileScreen.style.backgroundRepeat = profileBg ? "no-repeat" : "";
+      profileScreen.style.color = profileTextColor;
+    }
 
     document.querySelectorAll(".profileInfoBox, .profileMainBox, .profileStatus").forEach(function (element) {
       element.style.background = profileBoxBg;
@@ -447,24 +572,12 @@ document.body.style.backgroundColor = "black";
     });
 
     document.querySelectorAll(
-      "#homeScreen, #homeScreen h1, #homeScreen h2, #homeScreen h3, #homeScreen h4, #homeScreen p, #homeScreen .friendName, #homeScreen .friendStatus, #homeScreen .clockTime, #homeScreen .clockDate, #homeScreen .dmSidebarName, #homeScreen .dmSidebarPreview, #homeScreen .activeChatName"
-    ).forEach(function (element) {
-      element.style.color = homeTextColor;
-    });
-
-    document.querySelectorAll(
       "#profileScreen, #profileScreen h1, #profileScreen h2, #profileScreen h3, #profileScreen h4, #profileScreen p, #profileScreen .profileNameBig, #profileScreen .profileSubSmall, #profileScreen .profileStatus"
     ).forEach(function (element) {
       element.style.color = profileTextColor;
     });
 
-    document.querySelectorAll("#homeScreen input, #homeScreen select").forEach(function (element) {
-      element.style.color = homeTextColor;
-      element.style.borderColor = homeBorderColor;
-      element.style.background = homeBoxBg;
-    });
-
-    document.querySelectorAll("#profileScreen input, #profileScreen select").forEach(function (element) {
+    document.querySelectorAll("#profileScreen input, #profileScreen select, #profileScreen textarea").forEach(function (element) {
       element.style.color = profileTextColor;
       element.style.borderColor = profileBorderColor;
       element.style.background = profileBoxBg;
@@ -541,35 +654,20 @@ document.body.style.backgroundColor = "black";
   }
 
   async function applyProfileImages() {
-  await applyProfileIdentity();
-  await applyAvatarImage();
-  await applyCoverImage();
-  await applyRelationshipInfo();
-  await applyInfoBoxDetails();
-  await applyHomeProfileTheme();
-  applyProfileFeedHeading();
-  renderProfileFeed();
-}
+    applyProfilePopupLabels();
+    await applyProfileIdentity();
+    await applyAvatarImage();
+    await applyCoverImage();
+    await applyRelationshipInfo();
+    await applyInfoBoxDetails();
+    await applyHomeProfileTheme();
+    await applyProfileFeedHeading();
+    await renderProfileFeed();
 
-async function applyProfileFeedHeading() {
-  var user = getViewedUser();
-  var heading = getEl("profileFeedHeading");
-  if (!user || !heading) return;
-
-  var settings = await getUserSettings(user);
-  var customTitle = settings && settings.profileFeedTitle
-    ? String(settings.profileFeedTitle).trim()
-    : "";
-
-  if (customTitle) {
-    heading.style.display = "block";
-    heading.innerText = customTitle;
-  } else {
-    heading.style.display = "none";
-    heading.innerText = "";
+    if (Heavenly.posts && Heavenly.posts.create && Heavenly.posts.create.initAllComposers) {
+      Heavenly.posts.create.initAllComposers();
+    }
   }
-}
-
 
   function initProfileUploads() {
     var avatarInput = getEl("avatarUploadInput");
@@ -805,6 +903,8 @@ async function applyProfileFeedHeading() {
     var foreignActionsBox = getEl("foreignProfileActionsBox");
     var profilePostCreator = getEl("profilePostCreator");
 
+    applyProfilePopupLabels();
+
     if (ownSettingsBtn) {
       ownSettingsBtn.style.display = isOwnProfile() ? "block" : "none";
     }
@@ -839,11 +939,13 @@ async function applyProfileFeedHeading() {
     var hpProfileBg = getEl("hpProfileBg");
     var popup = getEl("homeProfilePopup");
 
+    applyProfilePopupLabels();
+
     if (hpBoxColor) hpBoxColor.value = theme.boxColor || "#8b5cf6";
     if (hpPanelColor) hpPanelColor.value = theme.panelColor || "#4b0010";
     if (hpTextColor) hpTextColor.value = theme.textColor || "#ffffff";
     if (hpFontFamily) hpFontFamily.value = theme.fontFamily || "Arial, sans-serif";
-    if (hpHomeBg) hpHomeBg.value = theme.homeBg || "";
+    if (hpHomeBg) hpHomeBg.value = "";
     if (hpProfileBg) hpProfileBg.value = theme.profileBg || "";
 
     if (popup) {
@@ -896,7 +998,7 @@ async function applyProfileFeedHeading() {
       panelColor: getEl("hpPanelColor") ? getEl("hpPanelColor").value : "#4b0010",
       textColor: getEl("hpTextColor") ? getEl("hpTextColor").value : "#ffffff",
       fontFamily: getEl("hpFontFamily") ? getEl("hpFontFamily").value : "Arial, sans-serif",
-      homeBg: getEl("hpHomeBg") ? getEl("hpHomeBg").value.trim() : "",
+      homeBg: "",
       profileBg: getEl("hpProfileBg") ? getEl("hpProfileBg").value.trim() : ""
     };
 
@@ -905,7 +1007,7 @@ async function applyProfileFeedHeading() {
     closeHomeProfilePopup();
 
     if (typeof window.setFeedback === "function") {
-      window.setFeedback("Home & Profile gespeichert", true);
+      window.setFeedback("Profil-Design gespeichert", true);
     }
   }
 
@@ -926,7 +1028,7 @@ async function applyProfileFeedHeading() {
     closeHomeProfilePopup();
 
     if (typeof window.setFeedback === "function") {
-      window.setFeedback("Home & Profile zurückgesetzt", true);
+      window.setFeedback("Profil-Design zurückgesetzt", true);
     }
   }
 
@@ -1322,4 +1424,12 @@ async function applyProfileFeedHeading() {
       closeForeignProfileMenu();
     }
   });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    applyProfilePopupLabels();
+  });
+
+  setTimeout(function () {
+    applyProfilePopupLabels();
+  }, 0);
 })();

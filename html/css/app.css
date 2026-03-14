@@ -2172,3 +2172,48 @@ body{
   word-break:break-word;
 }
 
+.postProfileDateOnly{
+  margin-bottom:12px;
+  font-size:13px;
+  color:rgba(255,255,255,0.72);
+}
+
+.postOwnerActions{
+  display:flex;
+  gap:8px;
+  margin:0 0 10px;
+}
+
+.postOwnerBtn{
+  min-height:34px;
+  padding:0 12px;
+  border:none;
+  border-radius:10px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.10);
+  color:white;
+  cursor:pointer;
+}
+
+.postOwnerBtn:hover{
+  background:rgba(255,255,255,0.14);
+}
+
+.postCommentActions{
+  margin-top:8px;
+}
+
+.postCommentBtn{
+  padding:6px 10px;
+  border:none;
+  border-radius:10px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.10);
+  color:white;
+  cursor:pointer;
+  font-size:13px;
+}
+
+.postCommentBtn:hover{
+  background:rgba(255,255,255,0.14);
+}
