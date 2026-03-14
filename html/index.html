@@ -76,32 +76,22 @@
       </div>
     </div>
 
-    <div class="homeContent">
+     <div class="homeContent">
       <div class="feedBox">
-        <div class="postCreator">
-        <button
-        type="button"
-        class="dmToolBtn"
-        onclick="openDmMedia('emoji', 'homePostInput')"
-        title="Emoji / Emotes"
-        >
-        😊
-        </button>
+       <div class="postCreator">
+        <input
+        id="homePostInput"
+        type="text"
+        placeholder="Was möchtest du posten?"
+        />
 
-       <input
-       id="homePostInput"
-       type="text"
-       placeholder="Was möchtest du posten?"
-       />
-
-        <button
+      <button
         type="button"
         onclick="Heavenly.posts.create.submitPost({ inputId: 'homePostInput', feedType: 'home' })"
-        >
-         Posten
-        </button>
-        </div>
-
+      >
+        Posten
+      </button>
+    </div>
 
         <div id="homeFeedPosts" class="postFeed"></div>
       </div>

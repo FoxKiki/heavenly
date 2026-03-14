@@ -205,7 +205,8 @@ Heavenly.posts = Heavenly.posts || {};
       return await window.openDmConfirm(titleText, bodyText);
     }
 
-    return window.confirm(bodyText || titleText || "Wirklich löschen?");
+    console.warn("openDmConfirm fehlt noch.");
+    return false;
   }
 
   async function openPostPrompt(titleText, initialValue) {
@@ -213,7 +214,8 @@ Heavenly.posts = Heavenly.posts || {};
       return await window.openDmPrompt(titleText, initialValue);
     }
 
-    return window.prompt(titleText || "Bearbeiten", initialValue || "");
+    console.warn("openDmPrompt fehlt noch.");
+    return null;
   }
 
   async function handleEditClick(postId, encodedText, feedType, profileOwner) {

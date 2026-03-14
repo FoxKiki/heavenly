@@ -1161,4 +1161,9 @@ window.Heavenly = window.Heavenly || {};
       return;
     }
   });
+
+  window.openDmConfirm = openDmConfirm;
+  window.openDmPrompt = openDmPrompt;
+
+
 })();

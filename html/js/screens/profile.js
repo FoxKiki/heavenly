@@ -550,15 +550,26 @@ Heavenly.screens = Heavenly.screens || {};
       homeScreen.style.backgroundRepeat = "";
     }
 
-    var profileScreen = getEl("profileScreen");
+        var profileScreen = getEl("profileScreen");
     if (profileScreen) {
       profileScreen.style.backgroundColor = "transparent";
-      profileScreen.style.backgroundImage = profileBg ? 'url("' + profileBg + '")' : "";
-      profileScreen.style.backgroundSize = profileBg ? "cover" : "";
-      profileScreen.style.backgroundPosition = profileBg ? "center" : "";
-      profileScreen.style.backgroundRepeat = profileBg ? "no-repeat" : "";
+      profileScreen.style.backgroundImage = "";
+      profileScreen.style.backgroundSize = "";
+      profileScreen.style.backgroundPosition = "";
+      profileScreen.style.backgroundRepeat = "";
       profileScreen.style.color = profileTextColor;
     }
+
+    var profileContent = document.querySelector(".profileContent");
+    if (profileContent) {
+      profileContent.style.backgroundImage = profileBg ? 'url("' + profileBg + '")' : "";
+      profileContent.style.backgroundSize = profileBg ? "cover" : "";
+      profileContent.style.backgroundPosition = profileBg ? "center" : "";
+      profileContent.style.backgroundRepeat = profileBg ? "no-repeat" : "";
+      profileContent.style.borderRadius = "18px";
+      profileContent.style.padding = profileBg ? "12px" : "";
+    }
+
 
     document.querySelectorAll(".profileInfoBox, .profileMainBox, .profileStatus").forEach(function (element) {
       element.style.background = profileBoxBg;

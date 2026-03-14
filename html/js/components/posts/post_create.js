@@ -50,6 +50,19 @@ Heavenly.posts = Heavenly.posts || {};
     textarea.style.height = Math.min(textarea.scrollHeight, 180) + "px";
   }
 
+  function focusComposer(inputId) {
+    var input = getEl(inputId);
+    if (!input) return;
+
+    input.focus();
+
+    if (typeof input.selectionStart === "number" && typeof input.selectionEnd === "number") {
+      var end = String(input.value || "").length;
+      input.selectionStart = end;
+      input.selectionEnd = end;
+    }
+  }
+
   function renderComposerPreview(inputId) {
     var state = ensureComposerState(inputId);
     var preview = getEl(inputId + "_preview");
@@ -80,12 +93,26 @@ Heavenly.posts = Heavenly.posts || {};
       removeBtn.onclick = function () {
         state.images.splice(index, 1);
         renderComposerPreview(inputId);
+        focusComposer(inputId);
       };
 
       item.appendChild(img);
       item.appendChild(removeBtn);
       preview.appendChild(item);
     });
+  }
+
+  function resetComposer(inputId) {
+    var input = getEl(inputId);
+    var state = ensureComposerState(inputId);
+
+    if (input) {
+      input.value = "";
+      autoResizeTextarea(input);
+    }
+
+    state.images = [];
+    renderComposerPreview(inputId);
   }
 
   async function addFilesToComposer(inputId, files) {
@@ -112,162 +139,165 @@ Heavenly.posts = Heavenly.posts || {};
   }
 
   function initComposer(inputId) {
-    var input = getEl(inputId);
-    if (!input || input.dataset.heavenlyComposerReady === "1") return;
+    var existingInput = getEl(inputId);
+    var existingTextarea = document.querySelector("textarea#" + inputId);
+    var creator = null;
 
-    input.dataset.heavenlyComposerReady = "1";
+    if (existingInput) {
+      creator = existingInput.closest(".postCreator");
+    } else if (existingTextarea) {
+      creator = existingTextarea.closest(".postCreator");
+    }
 
-    var creator = input.closest(".postCreator");
     if (!creator) return;
+    if (creator.dataset.heavenlyComposerReady === "1") return;
 
-    var originalButton = creator.querySelector('button[onclick], .postSubmitBtn') || creator.querySelector("button:last-of-type");
-    if (!originalButton) return;
-
-    var textarea = document.createElement("textarea");
-    textarea.id = input.id;
-    textarea.className = "postComposerInput";
-    textarea.placeholder = input.placeholder || "Was möchtest du posten?";
-    textarea.rows = 1;
-    textarea.value = input.value || "";
-
-    input.parentNode.replaceChild(textarea, input);
-
-    var tools = document.createElement("div");
-    tools.className = "postComposerTools";
-
-    var imageBtn = document.createElement("button");
-    imageBtn.className = "dmToolBtn";
-    imageBtn.type = "button";
-    imageBtn.title = "Bild hinzufügen";
-    imageBtn.innerText = "🖼";
-
-    var emojiBtn = document.createElement("button");
-    emojiBtn.className = "dmToolBtn";
-    emojiBtn.type = "button";
-    emojiBtn.title = "Emoji / Emotes";
-    emojiBtn.innerText = "😊";
-
-    var hiddenImageInput = document.createElement("input");
-    hiddenImageInput.type = "file";
-    hiddenImageInput.accept = "image/*";
-    hiddenImageInput.multiple = true;
-    hiddenImageInput.hidden = true;
-    hiddenImageInput.id = inputId + "_imageInput";
-
-    var preview = document.createElement("div");
-    preview.className = "postComposerPreview";
-    preview.id = inputId + "_preview";
-    preview.style.display = "none";
-
-    originalButton.classList.add("postSubmitBtn");
-
-    tools.appendChild(imageBtn);
-    tools.appendChild(emojiBtn);
-    creator.insertBefore(tools, textarea);
-    creator.appendChild(hiddenImageInput);
-    creator.appendChild(preview);
-
-    imageBtn.onclick = function () {
-      hiddenImageInput.click();
-    };
-
-    emojiBtn.onclick = function () {
-      if (typeof window.openEmojiPicker === "function") {
-        window.openEmojiPicker(inputId, {
-          mode: "post",
-          onEmoteSelect: function (emote) {
-            if (!emote || !emote.src) return;
-
-            var state = ensureComposerState(inputId);
-            state.images.push(emote.src);
-            renderComposerPreview(inputId);
-            focusComposer(inputId);
-          }
-        });
-      }
-    };
-
-    hiddenImageInput.addEventListener("change", async function () {
-      var files = hiddenImageInput.files;
-      if (files && files.length) {
-        await addFilesToComposer(inputId, files);
-      }
-      hiddenImageInput.value = "";
-      focusComposer(inputId);
-    });
-
-    textarea.addEventListener("input", function () {
-      autoResizeTextarea(textarea);
-    });
-
-    textarea.addEventListener("keydown", function (event) {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-
-        if (inputId === "profilePostInput") {
-          if (typeof window.submitProfilePost === "function") {
-            window.submitProfilePost();
-          }
-          return;
-        }
-
-        Heavenly.posts.create.submitPost({
-          inputId: "homePostInput",
-          feedType: "home"
-        });
-      }
-    });
-
-    textarea.addEventListener("paste", async function (event) {
-      var clipboardData = event.clipboardData;
-      if (!clipboardData || !clipboardData.items) return;
-
-      for (var i = 0; i < clipboardData.items.length; i++) {
-        var item = clipboardData.items[i];
-
-        if (!item || item.kind !== "file") {
-          continue;
-        }
-
-        if (!item.type || item.type.indexOf("image/") !== 0) {
-          continue;
-        }
-
-        var file = item.getAsFile();
-        if (!file) continue;
-
-        event.preventDefault();
-        await addFilesToComposer(inputId, [file]);
-        return;
-      }
-    });
-
-    autoResizeTextarea(textarea);
-  }
-
-  function focusComposer(inputId) {
-    var input = getEl(inputId);
+    var input = existingInput || existingTextarea;
     if (!input) return;
 
-    input.focus();
+    creator.dataset.heavenlyComposerReady = "1";
 
-    if (typeof input.selectionStart === "number" && typeof input.selectionEnd === "number") {
-      var end = (input.value || "").length;
-      input.selectionStart = end;
-      input.selectionEnd = end;
+    var originalButton =
+      creator.querySelector('button[onclick], .postSubmitBtn') ||
+      creator.querySelector("button:last-of-type");
+
+    if (!originalButton) return;
+
+    var textarea;
+
+    if (input.tagName && input.tagName.toLowerCase() === "textarea") {
+      textarea = input;
+      textarea.classList.add("postComposerInput");
+    } else {
+      textarea = document.createElement("textarea");
+      textarea.id = input.id;
+      textarea.className = "postComposerInput";
+      textarea.placeholder = input.placeholder || "Was möchtest du posten?";
+      textarea.rows = 1;
+      textarea.value = input.value || "";
+      input.parentNode.replaceChild(textarea, input);
     }
-  }
 
-  function resetComposer(inputId) {
-    var input = getEl(inputId);
-    var state = ensureComposerState(inputId);
+    if (!creator.querySelector(".postComposerTools")) {
+      var tools = document.createElement("div");
+      tools.className = "postComposerTools";
 
-    if (input) {
-      input.value = "";
-      autoResizeTextarea(input);
+      var imageBtn = document.createElement("button");
+      imageBtn.className = "dmToolBtn";
+      imageBtn.type = "button";
+      imageBtn.title = "Bild hinzufügen";
+      imageBtn.innerText = "🖼";
+
+      var emojiBtn = document.createElement("button");
+      emojiBtn.className = "dmToolBtn";
+      emojiBtn.type = "button";
+      emojiBtn.title = "Emoji / Emotes";
+      emojiBtn.innerText = "😊";
+
+      var hiddenImageInput = document.createElement("input");
+      hiddenImageInput.type = "file";
+      hiddenImageInput.accept = "image/*";
+      hiddenImageInput.multiple = true;
+      hiddenImageInput.hidden = true;
+      hiddenImageInput.id = inputId + "_imageInput";
+
+      var preview = document.createElement("div");
+      preview.className = "postComposerPreview";
+      preview.id = inputId + "_preview";
+      preview.style.display = "none";
+
+      originalButton.classList.add("postSubmitBtn");
+
+      tools.appendChild(imageBtn);
+      tools.appendChild(emojiBtn);
+      creator.insertBefore(tools, textarea);
+      creator.appendChild(hiddenImageInput);
+      creator.appendChild(preview);
+
+      imageBtn.onclick = function () {
+        hiddenImageInput.click();
+      };
+
+      emojiBtn.onclick = function () {
+        if (typeof window.openEmojiPicker === "function") {
+          window.openEmojiPicker(inputId, {
+            mode: "post",
+            onEmoteSelect: function (emote) {
+              if (!emote || !emote.src) return;
+
+              var state = ensureComposerState(inputId);
+              state.images.push(emote.src);
+              renderComposerPreview(inputId);
+              focusComposer(inputId);
+            }
+          });
+        }
+      };
+
+      hiddenImageInput.addEventListener("change", async function () {
+        var files = hiddenImageInput.files;
+
+        if (files && files.length) {
+          await addFilesToComposer(inputId, files);
+        }
+
+        hiddenImageInput.value = "";
+        focusComposer(inputId);
+      });
     }
 
-    state.images = [];
+    if (!textarea.dataset.heavenlyComposerBound) {
+      textarea.dataset.heavenlyComposerBound = "1";
+
+      textarea.addEventListener("input", function () {
+        autoResizeTextarea(textarea);
+      });
+
+      textarea.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+
+          if (inputId === "profilePostInput") {
+            if (typeof window.submitProfilePost === "function") {
+              window.submitProfilePost();
+            }
+            return;
+          }
+
+          Heavenly.posts.create.submitPost({
+            inputId: "homePostInput",
+            feedType: "home"
+          });
+        }
+      });
+
+      textarea.addEventListener("paste", async function (event) {
+        var clipboardData = event.clipboardData;
+        if (!clipboardData || !clipboardData.items) return;
+
+        for (var i = 0; i < clipboardData.items.length; i++) {
+          var item = clipboardData.items[i];
+
+          if (!item || item.kind !== "file") {
+            continue;
+          }
+
+          if (!item.type || item.type.indexOf("image/") !== 0) {
+            continue;
+          }
+
+          var file = item.getAsFile();
+          if (!file) continue;
+
+          event.preventDefault();
+          await addFilesToComposer(inputId, [file]);
+          focusComposer(inputId);
+          return;
+        }
+      });
+    }
+
+    autoResizeTextarea(textarea);
     renderComposerPreview(inputId);
   }
 
