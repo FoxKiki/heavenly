@@ -211,6 +211,23 @@ window.Heavenly = window.Heavenly || {};
       friendStatus.className = "friendStatus";
       friendStatus.innerText = "Freund";
 
+      if (Heavenly.api && Heavenly.api.getProfile) {
+        try {
+          var profileResult = await Heavenly.api.getProfile(name);
+          if (
+            profileResult &&
+            profileResult.ok &&
+            profileResult.data &&
+            profileResult.data.settings &&
+            profileResult.data.settings.status
+          ) {
+            friendStatus.innerText = profileResult.data.settings.status;
+          }
+        } catch (error) {
+          console.warn("Friend status load failed", error);
+        }
+      }
+
       var removeBtn = document.createElement("button");
       removeBtn.className = "friendActionBtn";
       removeBtn.type = "button";
@@ -486,220 +503,218 @@ window.Heavenly = window.Heavenly || {};
   };
 
   window.onGlobalSearch = async function () {
-  var user = getCurrentUser();
-  var input = getEl("globalSearch");
-  var list = getEl("globalSearchResults");
+    var user = getCurrentUser();
+    var input = getEl("globalSearch");
+    var list = getEl("globalSearchResults");
 
-  var rawQuery = input ? input.value.trim() : "";
-  var query = rawQuery.toLowerCase();
+    var rawQuery = input ? input.value.trim() : "";
+    var query = rawQuery.toLowerCase();
 
-  if (!list) return query;
+    if (!list) return query;
 
-  if (!query) {
-    window.closeGlobalSearchPopup();
-    list.innerHTML = "";
-    return query;
-  }
-
-  var accounts = [];
-
-  if (Heavenly.api && Heavenly.api.getAccounts) {
-    try {
-      var accountsResult = await Heavenly.api.getAccounts();
-      if (accountsResult && accountsResult.ok && Array.isArray(accountsResult.data)) {
-        accounts = accountsResult.data;
-      }
-    } catch (error) {
-      console.warn("Account search load failed", error);
-    }
-  }
-
-  if (accounts.length === 0 && Heavenly.storage && Heavenly.storage.getAccounts) {
-    accounts = Heavenly.storage.getAccounts().map(function (account) {
-      return account.username;
-    });
-  }
-
-  var cleanQuery = query.replace(/^#+/, "").trim();
-
-  var userMatches = accounts.filter(function (name) {
-    if (!name) return false;
-    if (user && String(name).toLowerCase() === String(user).toLowerCase()) return false;
-    if (user && isBlocked(user, name)) return false;
-
-    var lower = String(name).toLowerCase();
-    var parts = lower.split(" ").filter(Boolean);
-
-    if (lower.includes(query)) {
-      return true;
+    if (!query) {
+      window.closeGlobalSearchPopup();
+      list.innerHTML = "";
+      return query;
     }
 
-    if (cleanQuery && lower.includes(cleanQuery)) {
-      return true;
-    }
+    var accounts = [];
 
-    return parts.some(function (part) {
-      return part.startsWith(query) || (cleanQuery && part.startsWith(cleanQuery));
-    });
-  }).slice(0, 6);
-
-  list.innerHTML = "";
-
-  if (userMatches.length > 0) {
-    var peopleTitle = document.createElement("div");
-    peopleTitle.className = "searchSectionTitle";
-    peopleTitle.innerText = "Personen";
-    list.appendChild(peopleTitle);
-
-    for (var index = 0; index < userMatches.length; index++) {
-      var name = userMatches[index];
-
-      var item = document.createElement("div");
-      item.className = "searchResultItem";
-      item.onclick = (function (username) {
-        return function () {
-          openProfilePreview(username);
-          window.closeGlobalSearchPopup();
-        };
-      })(name);
-
-      var avatar = document.createElement("div");
-      avatar.className = "searchResultAvatar";
-      avatar.innerText = getInitials(name);
-
-      if (Heavenly.api && Heavenly.api.getAvatar) {
-        try {
-          var avatarResult = await Heavenly.api.getAvatar(name);
-          if (avatarResult && avatarResult.ok && avatarResult.data) {
-            avatar.innerText = "";
-            avatar.style.backgroundImage = 'url("' + avatarResult.data + '")';
-            avatar.style.backgroundSize = "cover";
-            avatar.style.backgroundPosition = "center";
-            avatar.style.backgroundRepeat = "no-repeat";
-          }
-        } catch (error) {
-          console.warn("Avatar search load failed", error);
+    if (Heavenly.api && Heavenly.api.getAccounts) {
+      try {
+        var accountsResult = await Heavenly.api.getAccounts();
+        if (accountsResult && accountsResult.ok && Array.isArray(accountsResult.data)) {
+          accounts = accountsResult.data;
         }
+      } catch (error) {
+        console.warn("Account search load failed", error);
       }
-
-      var meta = document.createElement("div");
-      meta.className = "searchResultMeta";
-
-      var label = document.createElement("div");
-      label.className = "searchResultName";
-      label.innerText = name;
-
-      var sub = document.createElement("div");
-      sub.className = "searchResultSub";
-      sub.innerText = "Profil öffnen";
-
-      meta.appendChild(label);
-      meta.appendChild(sub);
-
-      item.appendChild(avatar);
-      item.appendChild(meta);
-
-      list.appendChild(item);
     }
-  }
 
-  if (cleanQuery) {
-    var tagTitle = document.createElement("div");
-    tagTitle.className = "searchSectionTitle";
-    tagTitle.innerText = "Hashtags";
-    list.appendChild(tagTitle);
+    if (accounts.length === 0 && Heavenly.storage && Heavenly.storage.getAccounts) {
+      accounts = Heavenly.storage.getAccounts().map(function (account) {
+        return account.username;
+      });
+    }
 
-    var tagItem = document.createElement("div");
-    tagItem.className = "searchResultItem";
-    tagItem.onclick = function () {
-      if (typeof window.setFeedback === "function") {
-        window.setFeedback("Hashtag-Suche für #" + cleanQuery + " kommt gleich 😊", true);
+    var cleanQuery = query.replace(/^#+/, "").trim();
+
+    var userMatches = accounts.filter(function (name) {
+      if (!name) return false;
+      if (user && String(name).toLowerCase() === String(user).toLowerCase()) return false;
+      if (user && isBlocked(user, name)) return false;
+
+      var lower = String(name).toLowerCase();
+      var parts = lower.split(" ").filter(Boolean);
+
+      if (lower.includes(query)) {
+        return true;
       }
-      window.closeGlobalSearchPopup();
-    };
 
-    var tagAvatar = document.createElement("div");
-    tagAvatar.className = "searchResultAvatar";
-    tagAvatar.innerText = "#";
-
-    var tagMeta = document.createElement("div");
-    tagMeta.className = "searchResultMeta";
-
-    var tagName = document.createElement("div");
-    tagName.className = "searchResultName";
-    tagName.innerText = "#" + cleanQuery;
-
-    var tagSub = document.createElement("div");
-    tagSub.className = "searchResultSub";
-    tagSub.innerText = "Nach Beiträgen mit diesem Hashtag suchen";
-
-    tagMeta.appendChild(tagName);
-    tagMeta.appendChild(tagSub);
-
-    tagItem.appendChild(tagAvatar);
-    tagItem.appendChild(tagMeta);
-
-    list.appendChild(tagItem);
-  }
-
-  if (cleanQuery) {
-    var postTitle = document.createElement("div");
-    postTitle.className = "searchSectionTitle";
-    postTitle.innerText = "Beiträge";
-    list.appendChild(postTitle);
-
-    var postItem = document.createElement("div");
-    postItem.className = "searchResultItem";
-    postItem.onclick = function () {
-      if (typeof window.setFeedback === "function") {
-        window.setFeedback('Beitragssuche nach "' + rawQuery + '" kommt gleich 😊', true);
+      if (cleanQuery && lower.includes(cleanQuery)) {
+        return true;
       }
-      window.closeGlobalSearchPopup();
-    };
 
-    var postAvatar = document.createElement("div");
-    postAvatar.className = "searchResultAvatar";
-    postAvatar.innerText = "📝";
+      return parts.some(function (part) {
+        return part.startsWith(query) || (cleanQuery && part.startsWith(cleanQuery));
+      });
+    }).slice(0, 6);
 
-    var postMeta = document.createElement("div");
-    postMeta.className = "searchResultMeta";
+    list.innerHTML = "";
 
-    var postName = document.createElement("div");
-    postName.className = "searchResultName";
-    postName.innerText = rawQuery.startsWith("#") ? "Beiträge zu #" + cleanQuery : 'Beiträge zu "' + rawQuery + '"';
+    if (userMatches.length > 0) {
+      var peopleTitle = document.createElement("div");
+      peopleTitle.className = "searchSectionTitle";
+      peopleTitle.innerText = "Personen";
+      list.appendChild(peopleTitle);
 
-    var postSub = document.createElement("div");
-    postSub.className = "searchResultSub";
-    postSub.innerText = "Feed- und Profilbeiträge durchsuchen";
+      for (var index = 0; index < userMatches.length; index++) {
+        var name = userMatches[index];
 
-    postMeta.appendChild(postName);
-    postMeta.appendChild(postSub);
+        var item = document.createElement("div");
+        item.className = "searchResultItem";
+        item.onclick = (function (username) {
+          return function () {
+            openProfilePreview(username);
+            window.closeGlobalSearchPopup();
+          };
+        })(name);
 
-    postItem.appendChild(postAvatar);
-    postItem.appendChild(postMeta);
+        var avatar = document.createElement("div");
+        avatar.className = "searchResultAvatar";
+        avatar.innerText = getInitials(name);
 
-    list.appendChild(postItem);
-  }
+        if (Heavenly.api && Heavenly.api.getAvatar) {
+          try {
+            var avatarResult = await Heavenly.api.getAvatar(name);
+            if (avatarResult && avatarResult.ok && avatarResult.data) {
+              avatar.innerText = "";
+              avatar.style.backgroundImage = 'url("' + avatarResult.data + '")';
+              avatar.style.backgroundSize = "cover";
+              avatar.style.backgroundPosition = "center";
+              avatar.style.backgroundRepeat = "no-repeat";
+            }
+          } catch (error) {
+            console.warn("Avatar search load failed", error);
+          }
+        }
 
-  if (userMatches.length === 0 && !cleanQuery) {
-    list.innerHTML = '<div class="searchEmpty">Keine passenden Treffer gefunden.</div>';
-  }
+        var meta = document.createElement("div");
+        meta.className = "searchResultMeta";
 
-  window.openGlobalSearchPopup();
-  return query;
-};
+        var label = document.createElement("div");
+        label.className = "searchResultName";
+        label.innerText = name;
+
+        var sub = document.createElement("div");
+        sub.className = "searchResultSub";
+        sub.innerText = "Profil öffnen";
+
+        meta.appendChild(label);
+        meta.appendChild(sub);
+
+        item.appendChild(avatar);
+        item.appendChild(meta);
+
+        list.appendChild(item);
+      }
+    }
+
+    if (cleanQuery) {
+      var tagTitle = document.createElement("div");
+      tagTitle.className = "searchSectionTitle";
+      tagTitle.innerText = "Hashtags";
+      list.appendChild(tagTitle);
+
+      var tagItem = document.createElement("div");
+      tagItem.className = "searchResultItem";
+      tagItem.onclick = function () {
+        if (typeof window.setFeedback === "function") {
+          window.setFeedback("Hashtag-Suche für #" + cleanQuery + " kommt gleich 😊", true);
+        }
+        window.closeGlobalSearchPopup();
+      };
+
+      var tagAvatar = document.createElement("div");
+      tagAvatar.className = "searchResultAvatar";
+      tagAvatar.innerText = "#";
+
+      var tagMeta = document.createElement("div");
+      tagMeta.className = "searchResultMeta";
+
+      var tagName = document.createElement("div");
+      tagName.className = "searchResultName";
+      tagName.innerText = "#" + cleanQuery;
+
+      var tagSub = document.createElement("div");
+      tagSub.className = "searchResultSub";
+      tagSub.innerText = "Nach Beiträgen mit diesem Hashtag suchen";
+
+      tagMeta.appendChild(tagName);
+      tagMeta.appendChild(tagSub);
+
+      tagItem.appendChild(tagAvatar);
+      tagItem.appendChild(tagMeta);
+
+      list.appendChild(tagItem);
+    }
+
+    if (cleanQuery) {
+      var postTitle = document.createElement("div");
+      postTitle.className = "searchSectionTitle";
+      postTitle.innerText = "Beiträge";
+      list.appendChild(postTitle);
+
+      var postItem = document.createElement("div");
+      postItem.className = "searchResultItem";
+      postItem.onclick = function () {
+        if (typeof window.setFeedback === "function") {
+          window.setFeedback('Beitragssuche nach "' + rawQuery + '" kommt gleich 😊', true);
+        }
+        window.closeGlobalSearchPopup();
+      };
+
+      var postAvatar = document.createElement("div");
+      postAvatar.className = "searchResultAvatar";
+      postAvatar.innerText = "📝";
+
+      var postMeta = document.createElement("div");
+      postMeta.className = "searchResultMeta";
+
+      var postName = document.createElement("div");
+      postName.className = "searchResultName";
+      postName.innerText = rawQuery.startsWith("#") ? "Beiträge zu #" + cleanQuery : 'Beiträge zu "' + rawQuery + '"';
+
+      var postSub = document.createElement("div");
+      postSub.className = "searchResultSub";
+      postSub.innerText = "Feed- und Profilbeiträge durchsuchen";
+
+      postMeta.appendChild(postName);
+      postMeta.appendChild(postSub);
+
+      postItem.appendChild(postAvatar);
+      postItem.appendChild(postMeta);
+
+      list.appendChild(postItem);
+    }
+
+    if (userMatches.length === 0 && !cleanQuery) {
+      list.innerHTML = '<div class="searchEmpty">Keine passenden Treffer gefunden.</div>';
+    }
+
+    window.openGlobalSearchPopup();
+    return query;
+  };
 
   window.openDMs = function () {
-    var panel = getEl("dmPanel");
-    if (panel) {
-      panel.classList.add("active");
+    if (typeof window.openDmOverlay === "function") {
+      window.openDmOverlay();
     }
   };
 
   window.closeDMs = function () {
-    var panel = getEl("dmPanel");
-    if (panel) {
-      panel.classList.remove("active");
+    if (typeof window.closeDmOverlay === "function") {
+      window.closeDmOverlay();
     }
   };
 

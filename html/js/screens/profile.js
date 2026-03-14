@@ -375,7 +375,7 @@ window.Heavenly = window.Heavenly || {};
     }
 
     document.querySelectorAll(
-      ".homeHeader, .feedBox, .usersBox, .feedItem, .fortuneBox, .clockBox, .searchInput, .globalSearch"
+      ".homeHeader, .feedBox, .usersBox, .feedItem, .fortuneBox, .clockBox, .searchInput, .globalSearch, .homeSwitchBtn, .dmSidebar, .chatPanel, .dmSidebarItem, .activeChatInput"
     ).forEach(function (element) {
       element.style.background = homeBoxBg;
       element.style.borderColor = homeBorderColor;
@@ -394,7 +394,7 @@ window.Heavenly = window.Heavenly || {};
     });
 
     document.querySelectorAll(
-      "#homeScreen, #homeScreen h1, #homeScreen h2, #homeScreen h3, #homeScreen h4, #homeScreen p, #homeScreen .friendName, #homeScreen .friendStatus, #homeScreen .clockTime, #homeScreen .clockDate"
+      "#homeScreen, #homeScreen h1, #homeScreen h2, #homeScreen h3, #homeScreen h4, #homeScreen p, #homeScreen .friendName, #homeScreen .friendStatus, #homeScreen .clockTime, #homeScreen .clockDate, #homeScreen .dmSidebarName, #homeScreen .dmSidebarPreview, #homeScreen .activeChatName"
     ).forEach(function (element) {
       element.style.color = homeTextColor;
     });
@@ -727,18 +727,19 @@ window.Heavenly = window.Heavenly || {};
   function updateProfileActionVisibility() {
     var ownSettingsBtn = getEl("profileSettingsBtn");
     var ownDmBtn = getEl("profileDmBtn");
-    var foreignActions = getEl("foreignProfileActions");
+    var foreignActionsBox = getEl("foreignProfileActionsBox");
 
     if (ownSettingsBtn) {
       ownSettingsBtn.style.display = isOwnProfile() ? "block" : "none";
     }
 
     if (ownDmBtn) {
-      ownDmBtn.style.display = isOwnProfile() ? "inline-flex" : "none";
+      ownDmBtn.innerText = isOwnProfile() ? "Öffnen" : "Nachricht";
+      ownDmBtn.style.display = "inline-flex";
     }
 
-    if (foreignActions) {
-      foreignActions.style.display = isOwnProfile() ? "none" : "block";
+    if (foreignActionsBox) {
+      foreignActionsBox.style.display = isOwnProfile() ? "none" : "flex";
     }
 
     closeForeignProfileMenu();
@@ -1229,7 +1230,7 @@ window.Heavenly = window.Heavenly || {};
       closeProfileMenu();
     }
 
-    var foreignActions = getEl("foreignProfileActions");
+    var foreignActions = getEl("foreignProfileActionsBox");
     var foreignMenu = getEl("foreignProfileMenu");
 
     if (

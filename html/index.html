@@ -35,7 +35,9 @@
 
         <button class="newsBtn" type="button" onclick="openNews()" title="News">News</button>
 
-        <button class="dmBtn" type="button" onclick="openDMs()" title="Private Nachrichten">✉</button>
+        <button class="dmBtn" type="button" onclick="openDMs()" title="Private Nachrichten">
+          ✉
+        </button>
       </div>
 
       <div class="homeCenter">
@@ -80,17 +82,9 @@
         <div class="feedItem">Willkommen bei Heavenly ✨</div>
       </div>
 
-      <div class="usersBox">
-        <h3>Freunde</h3>
-
-        <div class="friendsToolbar">
-          <input
-            id="friendSearch"
-            class="searchInput searchInputSmall"
-            type="text"
-            placeholder="Freund suchen"
-            oninput="renderFriends()"
-          />
+      <div class="usersBox usersBoxWide">
+        <div class="usersBoxHeader">
+          <h3>Freunde</h3>
 
           <button
             id="friendRequestBtn"
@@ -102,6 +96,16 @@
             <span class="icon">👤</span>
             <span id="friendRequestDot" class="requestDot"></span>
           </button>
+        </div>
+
+        <div class="friendsToolbar">
+          <input
+            id="friendSearch"
+            class="searchInput searchInputSmall"
+            type="text"
+            placeholder="Freund suchen"
+            oninput="renderFriends()"
+          />
         </div>
 
         <div id="friendsList"></div>
@@ -124,43 +128,9 @@
             </div>
 
             <div class="profileNameWrap">
-              <div id="profileStatus" class="profileStatus">✨ Willkommen in meinem Heavenly Profil</div>
-            </div>
-          </div>
-
-          <div
-            id="foreignProfileActions"
-            class="foreignProfileActions"
-            onclick="event.stopPropagation()"
-          >
-            <button
-              id="foreignProfileGearBtn"
-              class="foreignProfileGearBtn"
-              type="button"
-              onclick="event.stopPropagation(); toggleForeignProfileMenu();"
-              title="Profiloptionen"
-            >
-              ⚙
-            </button>
-
-            <div
-              id="foreignProfileMenu"
-              class="foreignProfileMenu"
-              onclick="event.stopPropagation()"
-            >
-              <button
-                type="button"
-                onclick="event.stopPropagation(); sendFriendRequestToViewedUser()"
-              >
-                👥 Freundesanfrage
-              </button>
-
-              <button
-                type="button"
-                onclick="event.stopPropagation(); blockViewedUser()"
-              >
-                🚫 Blockieren
-              </button>
+              <div id="profileStatus" class="profileStatus">
+                Hier könnte ihre Werbung stehen. Tut es aber nicht :P
+              </div>
             </div>
           </div>
         </div>
@@ -170,6 +140,51 @@
         <div class="profileInfoBox">
           <div id="profileNameBig" class="profileNameBig">Kiki Fox</div>
 
+          <div id="foreignProfileActionsBox" class="foreignProfileActionsBox">
+            <button
+              id="foreignAddFriendBtn"
+              class="profileInlineBtn"
+              type="button"
+              onclick="sendFriendRequestToViewedUser()"
+            >
+              Freund hinzufügen
+            </button>
+
+            <button
+              id="foreignMessageBtn"
+              class="profileInlineBtn"
+              type="button"
+              onclick="openChatFromProfile()"
+            >
+              Nachricht
+            </button>
+
+            <div class="foreignProfileMenuWrap">
+              <button
+                id="foreignProfileGearBtn"
+                class="profileInlineBtn foreignMiniMenuBtn"
+                type="button"
+                onclick="toggleForeignProfileMenu()"
+                title="Optionen"
+              >
+                ⋯
+              </button>
+
+              <div
+                id="foreignProfileMenu"
+                class="foreignProfileMenu"
+                onclick="event.stopPropagation()"
+              >
+                <button
+                  type="button"
+                  onclick="event.stopPropagation(); blockViewedUser()"
+                >
+                  🚫 Blockieren
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="profileInfoList">
             <div class="profileInfoItem">
               <span class="profileInfoLabel">Privatnachrichten</span>
@@ -177,9 +192,9 @@
                 id="profileDmBtn"
                 class="profileInlineBtn"
                 type="button"
-                onclick="openDMs()"
+                onclick="openChatFromProfile()"
               >
-                Öffnen
+                Nachricht
               </button>
             </div>
 
@@ -229,20 +244,34 @@
               </button>
 
               <div id="profileMenu" class="profileMenu" onclick="event.stopPropagation()">
-                <button type="button" onclick="event.stopPropagation(); openProfileSection('homeProfile')">Home &amp; Profile</button>
-                <button type="button" onclick="event.stopPropagation(); openProfileSection('avatar')">Profilbild ändern</button>
-                <button type="button" onclick="event.stopPropagation(); openProfileSection('cover')">Titelbild ändern</button>
-                <button type="button" onclick="event.stopPropagation(); openProfileSection('status')">Status ändern</button>
-                <button type="button" onclick="event.stopPropagation(); openProfileSection('infoBox')">Infobox bearbeiten</button>
-                <button type="button" onclick="event.stopPropagation(); openProfileSection('blocklist')">Blockliste</button>
-                <button type="button" onclick="event.stopPropagation(); openProfileSection('deleteAccount')">Konto löschen</button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('homeProfile')">
+                  Home &amp; Profile
+                </button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('avatar')">
+                  Profilbild ändern
+                </button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('cover')">
+                  Titelbild ändern
+                </button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('status')">
+                  Status ändern
+                </button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('infoBox')">
+                  Infobox bearbeiten
+                </button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('blocklist')">
+                  Blockliste
+                </button>
+                <button type="button" onclick="event.stopPropagation(); openProfileSection('deleteAccount')">
+                  Konto löschen
+                </button>
               </div>
             </div>
           </div>
         </div>
 
         <div class="profileMainBox">
-          <h3>Coming soon</h3>
+          <h3>Werbung</h3>
           <div class="feedItem"></div>
         </div>
       </div>
@@ -256,26 +285,57 @@
   </div>
 
   <div id="dmPanel" class="dmPanel" onclick="closeDMs()">
-    <div class="dmPanelBox" onclick="event.stopPropagation()">
+    <div class="dmPanelBox dmPanelBoxLarge" onclick="event.stopPropagation()">
       <div class="dmPanelHeader">
         <div class="dmPanelTitle">Private Nachrichten</div>
         <button class="dmCloseBtn" type="button" onclick="closeDMs()">✕</button>
       </div>
 
-      <div id="dmList" class="dmList">
-        <div class="dmItem">
-          <div class="dmAvatar">KF</div>
-          <div class="dmMeta">
-            <div class="dmName">Kiki Fox</div>
-            <div class="dmPreview">Hey 👋</div>
-          </div>
+      <div class="dmPanelLayout">
+        <div class="dmFriendsColumn">
+          <div class="dmColumnHeader">Freunde</div>
+          <div id="dmFriendsList" class="dmFriendsList"></div>
         </div>
 
-        <div class="dmItem">
-          <div class="dmAvatar">M</div>
-          <div class="dmMeta">
-            <div class="dmName">Max</div>
-            <div class="dmPreview">Bist du online?</div>
+        <div class="dmConversationsColumn">
+          <div class="dmColumnHeader">Direktnachrichten</div>
+          <div id="dmConversationsList" class="dmConversationsList"></div>
+        </div>
+
+        <div class="dmChatColumn">
+          <div class="dmChatHeader">
+            <div id="dmActiveChatName" class="dmActiveChatName">Nachrichten</div>
+          </div>
+
+          <div id="dmActiveEmpty" class="dmActiveEmpty">
+            <div class="dmActiveEmptyBox">
+              <div class="dmActiveEmptyTitle">Wähle einen Chat aus</div>
+              <div class="dmActiveEmptySub">
+                Öffne eine Unterhaltung über dein Profil oder die Liste links.
+              </div>
+            </div>
+          </div>
+
+          <div id="dmActiveMessages" class="dmActiveMessages"></div>
+
+          <div id="dmComposer" class="dmComposer" style="display:none;">
+            <div class="dmComposerTools">
+              <button type="button" class="dmToolBtn" onclick="openDmMedia('image')">🖼</button>
+              <button type="button" class="dmToolBtn" onclick="openDmMedia('gif')">GIF</button>
+              <button type="button" class="dmToolBtn" onclick="openDmMedia('emoji')">😊</button>
+            </div>
+
+            <div class="dmComposerRow">
+              <input
+                id="dmMessageInput"
+                class="dmMessageInput"
+                type="text"
+                placeholder="Nachricht schreiben..."
+              />
+              <button class="dmSendBtn" type="button" onclick="sendActiveMessage()">
+                Senden
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -441,7 +501,12 @@
 
       <label class="hpField">
         <span>Über mich</span>
-        <input id="infoAbout" type="text" placeholder="Ein kleiner Text über dich" maxlength="160" />
+        <input
+          id="infoAbout"
+          type="text"
+          placeholder="Ein kleiner Text über dich"
+          maxlength="160"
+        />
       </label>
 
       <div class="hpActions">
@@ -463,6 +528,7 @@
 
   <script src="js/screens/auth.js"></script>
   <script src="js/screens/profile.js"></script>
+  <script src="js/screens/chat.js"></script>
   <script src="js/screens/home.js"></script>
 
   <script src="js/core/main.js"></script>
