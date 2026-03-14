@@ -1560,6 +1560,15 @@ body{
   outline:none;
   background:rgba(0,0,0,0.25);
   color:white;
+  font:inherit;
+}
+
+.dmMessageTextarea{
+  min-height:46px;
+  max-height:140px;
+  resize:none;
+  line-height:1.4;
+  overflow-y:auto;
 }
 
 .dmSendBtn{
@@ -1842,4 +1851,153 @@ body{
   .profileInfoValue{
     text-align:left;
   }
+}
+
+.dmMessageBubble{
+  position:relative;
+}
+
+.dmMessageActions{
+  position:absolute;
+  top:8px;
+  right:8px;
+  z-index:2;
+}
+
+.dmMessageMenuBtn{
+  width:28px;
+  height:28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:rgba(255,255,255,0.08);
+  color:white;
+  opacity:0;
+  transition:opacity 0.18s ease, background 0.18s ease;
+}
+
+.dmMessageBubble{
+  position:relative;
+}
+
+.dmMessageActions{
+  position:absolute;
+  top:8px;
+  right:8px;
+  z-index:2;
+}
+
+.dmMessageMenuBtn{
+  width:28px;
+  height:28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:rgba(255,255,255,0.08);
+  color:white;
+  opacity:0;
+  transition:opacity 0.18s ease, background 0.18s ease;
+}
+
+.dmMessageBubble:hover .dmMessageMenuBtn,
+.dmMessageMenuBtn.active{
+  opacity:1;
+}
+
+.dmMessageMenuBtn:hover{
+  background:rgba(255,255,255,0.16);
+}
+
+.dmMessageMenu{
+  position:absolute;
+  top:34px;
+  right:0;
+  min-width:140px;
+  display:none;
+  flex-direction:column;
+  gap:6px;
+  padding:8px;
+  border-radius:12px;
+  background:rgba(15,18,30,0.98);
+  border:1px solid rgba(255,255,255,0.12);
+  box-shadow:0 14px 30px rgba(0,0,0,0.35);
+}
+
+.dmMessageMenu.open{
+  display:flex;
+}
+
+.dmMessageMenu button{
+  width:100%;
+  padding:9px 10px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  text-align:left;
+  background:rgba(255,255,255,0.06);
+  color:white;
+  font-size:13px;
+}
+
+.dmMessageMenu button:hover{
+  background:rgba(255,255,255,0.14);
+}
+
+.dmMessageMenu button:last-child{
+  color:#ff7b7b;
+}
+
+.dmMessageEdited{
+  margin-top:6px;
+  font-size:11px;
+  opacity:0.65;
+}
+
+.dmActionPopupBox{
+  width:420px !important;
+  max-width:92vw !important;
+}
+
+.dmActionModalBody{
+  margin-bottom:14px;
+  color:white;
+  font-size:15px;
+  line-height:1.4;
+}
+
+.dmActionRow{
+  justify-content:flex-end;
+}
+
+.dmActionRow button{
+  width:auto !important;
+  min-width:140px;
+}
+
+#dmActionModalInput{
+  display:block;
+  width:100%;
+  box-sizing:border-box;
+  min-height:110px;
+  margin:10px 0 0 0;
+  padding:13px 14px;
+  border:none;
+  outline:none;
+  border-radius:12px;
+  background:rgba(255,255,255,0.1);
+  color:white;
+  font:inherit;
+  line-height:1.4;
+  resize:vertical;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);
+}
+
+.dmActionHidden{
+  display:none !important;
 }

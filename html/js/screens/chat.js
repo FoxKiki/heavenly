@@ -25,13 +25,42 @@ window.Heavenly = window.Heavenly || {};
     return [normalizeName(userA), normalizeName(userB)].sort().join(":");
   }
 
+  function createMessageId() {
+    return "msg_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
+  }
+
+  function ensureMessageShape(message) {
+    var safeMessage = message && typeof message === "object" ? message : {};
+
+    if (!safeMessage.id) {
+      safeMessage.id = createMessageId();
+    }
+
+    return safeMessage;
+  }
+
   function getGlobalChatStore() {
     try {
       var raw = localStorage.getItem("heavenly_chats_global");
       if (!raw) return {};
 
       var parsed = JSON.parse(raw);
-      return parsed && typeof parsed === "object" ? parsed : {};
+      if (!parsed || typeof parsed !== "object") {
+        return {};
+      }
+
+      Object.keys(parsed).forEach(function (chatId) {
+        if (!Array.isArray(parsed[chatId])) {
+          parsed[chatId] = [];
+          return;
+        }
+
+        parsed[chatId] = parsed[chatId].map(function (message) {
+          return ensureMessageShape(message);
+        });
+      });
+
+      return parsed;
     } catch (error) {
       console.warn("Global chat store load failed", error);
       return {};
@@ -100,8 +129,56 @@ window.Heavenly = window.Heavenly || {};
       chats[chatId] = [];
     }
 
-    chats[chatId].push(message);
+    chats[chatId].push(ensureMessageShape(message));
     saveGlobalChatStore(chats);
+  }
+
+  function updateMessage(chatId, messageId, updater) {
+    if (!chatId || !messageId || typeof updater !== "function") return false;
+
+    var chats = getGlobalChatStore();
+    var messages = Array.isArray(chats[chatId]) ? chats[chatId] : [];
+    var didUpdate = false;
+
+    chats[chatId] = messages.map(function (message) {
+      var safeMessage = ensureMessageShape(message);
+
+      if (safeMessage.id !== messageId) {
+        return safeMessage;
+      }
+
+      didUpdate = true;
+      return ensureMessageShape(updater(safeMessage) || safeMessage);
+    });
+
+    if (didUpdate) {
+      saveGlobalChatStore(chats);
+    }
+
+    return didUpdate;
+  }
+
+  function deleteMessage(chatId, messageId) {
+    if (!chatId || !messageId) return false;
+
+    var chats = getGlobalChatStore();
+    var messages = Array.isArray(chats[chatId]) ? chats[chatId] : [];
+    var beforeLength = messages.length;
+
+    chats[chatId] = messages
+      .map(function (message) {
+        return ensureMessageShape(message);
+      })
+      .filter(function (message) {
+        return message.id !== messageId;
+      });
+
+    if (chats[chatId].length !== beforeLength) {
+      saveGlobalChatStore(chats);
+      return true;
+    }
+
+    return false;
   }
 
   function formatTime(timestamp) {
@@ -136,28 +213,259 @@ window.Heavenly = window.Heavenly || {};
   }
 
   function isDirectImageUrl(text) {
-  var value = String(text || "").trim();
+    var value = String(text || "").trim();
 
-  if (!value) return false;
+    if (!value) return false;
 
-  return /^(https?:\/\/.+|\/?.+\.(gif|png|jpe?g|webp))(\?.*)?$/i.test(value);
-}
+    return /^(https?:\/\/.+|\/?.+\.(gif|png|jpe?g|webp))(\?.*)?$/i.test(value);
+  }
 
-function normalizeImageUrl(text) {
-  var value = String(text || "").trim();
+  function normalizeImageUrl(text) {
+    var value = String(text || "").trim();
 
-  if (!value) return "";
+    if (!value) return "";
 
-  if (/^https?:\/\//i.test(value)) {
+    if (/^https?:\/\//i.test(value)) {
+      return value;
+    }
+
+    if (value.charAt(0) === "/") {
+      return value;
+    }
+
     return value;
   }
 
-  if (value.charAt(0) === "/") {
-    return value;
+  function isDmInputActive() {
+    var input = getEl("dmMessageInput");
+    return !!input && document.activeElement === input;
   }
 
-  return value;
-}
+  function closeMessageMenu() {
+    var openMenus = document.querySelectorAll(".dmMessageMenu.open");
+    var activeButtons = document.querySelectorAll(".dmMessageMenuBtn.active");
+
+    openMenus.forEach(function (menu) {
+      menu.classList.remove("open");
+    });
+
+    activeButtons.forEach(function (button) {
+      button.classList.remove("active");
+    });
+  }
+
+  function toggleMessageMenu(menu, button) {
+    if (!menu || !button) return;
+
+    var shouldOpen = !menu.classList.contains("open");
+    closeMessageMenu();
+
+    if (shouldOpen) {
+      menu.classList.add("open");
+      button.classList.add("active");
+    }
+  }
+
+  function ensureDmActionModal() {
+    var existing = getEl("dmActionModal");
+    if (existing) {
+      return existing;
+    }
+
+    var modal = document.createElement("div");
+    modal.id = "dmActionModal";
+    modal.className = "popup";
+
+    var box = document.createElement("div");
+    box.className = "popup-box dmActionPopupBox";
+    box.onclick = function (event) {
+      event.stopPropagation();
+    };
+
+    var title = document.createElement("h2");
+    title.id = "dmActionModalTitle";
+    title.innerText = "Aktion";
+
+    var body = document.createElement("div");
+    body.id = "dmActionModalBody";
+    body.className = "dmActionModalBody";
+
+    var input = document.createElement("textarea");
+    input.id = "dmActionModalInput";
+    input.className = "dmActionHidden";
+    input.rows = 4;
+
+    var actions = document.createElement("div");
+    actions.className = "popupActionRow dmActionRow";
+
+    var confirmBtn = document.createElement("button");
+    confirmBtn.id = "dmActionModalConfirm";
+    confirmBtn.type = "button";
+    confirmBtn.innerText = "OK";
+
+    var cancelBtn = document.createElement("button");
+    cancelBtn.id = "dmActionModalCancel";
+    cancelBtn.type = "button";
+    cancelBtn.className = "close";
+    cancelBtn.innerText = "Abbrechen";
+
+    actions.appendChild(confirmBtn);
+    actions.appendChild(cancelBtn);
+
+    box.appendChild(title);
+    box.appendChild(body);
+    box.appendChild(input);
+    box.appendChild(actions);
+
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+
+    modal.addEventListener("click", function () {
+      if (typeof modal._resolver === "function") {
+        modal._resolver(null);
+      }
+      closeDmActionModal();
+    });
+
+    return modal;
+  }
+
+  function closeDmActionModal() {
+    var modal = getEl("dmActionModal");
+    if (!modal) return;
+
+    modal.classList.remove("active");
+    modal._resolver = null;
+  }
+
+  function openDmConfirm(titleText, bodyText) {
+    return new Promise(function (resolve) {
+      var modal = ensureDmActionModal();
+      var title = getEl("dmActionModalTitle");
+      var body = getEl("dmActionModalBody");
+      var input = getEl("dmActionModalInput");
+      var confirmBtn = getEl("dmActionModalConfirm");
+      var cancelBtn = getEl("dmActionModalCancel");
+
+      title.innerText = titleText || "Bestätigen";
+      body.innerText = bodyText || "";
+      input.value = "";
+      input.classList.add("dmActionHidden");
+
+      modal._resolver = function (value) {
+        resolve(value === true);
+      };
+
+      function finish(value) {
+        var resolver = modal._resolver;
+        modal._resolver = null;
+        closeDmActionModal();
+
+        if (typeof resolver === "function") {
+          resolver(value);
+        }
+      }
+
+      confirmBtn.innerText = "Löschen";
+      cancelBtn.innerText = "Abbrechen";
+
+      confirmBtn.onclick = function (event) {
+        event.stopPropagation();
+        finish(true);
+      };
+
+      cancelBtn.onclick = function (event) {
+        event.stopPropagation();
+        finish(false);
+      };
+
+      modal.classList.add("active");
+    });
+  }
+
+  function openDmPrompt(titleText, initialValue) {
+    return new Promise(function (resolve) {
+      var modal = ensureDmActionModal();
+      var title = getEl("dmActionModalTitle");
+      var body = getEl("dmActionModalBody");
+      var input = getEl("dmActionModalInput");
+      var confirmBtn = getEl("dmActionModalConfirm");
+      var cancelBtn = getEl("dmActionModalCancel");
+
+      title.innerText = titleText || "Bearbeiten";
+      body.innerText = "";
+      input.classList.remove("dmActionHidden");
+      input.value = initialValue || "";
+
+      modal._resolver = function (value) {
+        resolve(value);
+      };
+
+      function finish(value) {
+        var resolver = modal._resolver;
+        modal._resolver = null;
+        closeDmActionModal();
+
+        if (typeof resolver === "function") {
+          resolver(value);
+        }
+      }
+
+      confirmBtn.innerText = "Speichern";
+      cancelBtn.innerText = "Abbrechen";
+
+      confirmBtn.onclick = function (event) {
+        event.stopPropagation();
+        finish(input.value);
+      };
+
+      cancelBtn.onclick = function (event) {
+        event.stopPropagation();
+        finish(null);
+      };
+
+      modal.classList.add("active");
+
+      setTimeout(function () {
+        input.focus();
+        input.select();
+      }, 0);
+    });
+  }
+
+  async function sendImageFileToActiveChat(file) {
+    var currentUser = getCurrentUser();
+    var activeChat = Heavenly.state ? Heavenly.state.activeChat : null;
+    var activeChatUser = Heavenly.state ? Heavenly.state.activeChatUser : null;
+
+    if (!currentUser || !activeChat || !activeChatUser || !file) {
+      return false;
+    }
+
+    try {
+      var imageData = await readFileAsDataUrl(file);
+
+      saveMessage(activeChat, {
+        id: createMessageId(),
+        from: currentUser,
+        to: activeChatUser,
+        type: "image",
+        imageData: imageData,
+        time: Date.now()
+      });
+
+      await refreshDmPanel();
+      return true;
+    } catch (error) {
+      console.error("Image send failed", error);
+
+      if (typeof window.setFeedback === "function") {
+        window.setFeedback("Bild konnte nicht gesendet werden", false);
+      }
+
+      return false;
+    }
+  }
 
   async function getFriends() {
     var user = getCurrentUser();
@@ -460,7 +768,7 @@ function normalizeImageUrl(text) {
     }
 
     for (var i = 0; i < messages.length; i++) {
-      var msg = messages[i];
+      var msg = ensureMessageShape(messages[i]);
       var isOwn = normalizeName(msg.from) === normalizeName(currentUser);
 
       var row = document.createElement("div");
@@ -475,6 +783,92 @@ function normalizeImageUrl(text) {
 
       if (isOwn) {
         bubble.classList.add("own");
+      }
+
+      if (isOwn) {
+        var actions = document.createElement("div");
+        actions.className = "dmMessageActions";
+
+        var menuBtn = document.createElement("button");
+        menuBtn.className = "dmMessageMenuBtn";
+        menuBtn.type = "button";
+        menuBtn.innerText = "⋯";
+
+        var menu = document.createElement("div");
+        menu.className = "dmMessageMenu";
+
+        menuBtn.onclick = function (menuEl, buttonEl) {
+          return function (event) {
+            event.stopPropagation();
+            toggleMessageMenu(menuEl, buttonEl);
+          };
+        }(menu, menuBtn);
+
+        if (msg.type === "text") {
+          var editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.innerText = "Bearbeiten";
+          editBtn.onclick = function (messageId) {
+            return async function (event) {
+              event.stopPropagation();
+              closeMessageMenu();
+
+              var currentMessages = getChatMessages(activeChat);
+              var currentMessage = currentMessages.find(function (entry) {
+                return ensureMessageShape(entry).id === messageId;
+              });
+
+              if (!currentMessage) return;
+
+              var nextText = await openDmPrompt(
+                "Nachricht bearbeiten",
+                currentMessage.text || ""
+              );
+
+              if (nextText === null) return;
+
+              nextText = String(nextText).trim();
+              if (!nextText) return;
+
+              updateMessage(activeChat, messageId, function (message) {
+                message.text = nextText;
+                message.edited = true;
+                message.editedAt = Date.now();
+                return message;
+              });
+
+              await refreshDmPanel();
+            };
+          }(msg.id);
+
+          menu.appendChild(editBtn);
+        }
+
+        var deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.innerText = "Löschen";
+        deleteBtn.onclick = function (messageId) {
+          return async function (event) {
+            event.stopPropagation();
+            closeMessageMenu();
+
+            var confirmed = await openDmConfirm(
+              "Nachricht löschen",
+              "Möchtest du diese Nachricht wirklich löschen?"
+            );
+
+            if (!confirmed) return;
+
+            deleteMessage(activeChat, messageId);
+            await refreshDmPanel();
+          };
+        }(msg.id);
+
+        menu.appendChild(deleteBtn);
+
+        actions.appendChild(menuBtn);
+        actions.appendChild(menu);
+        bubble.appendChild(actions);
       }
 
       var meta = document.createElement("div");
@@ -529,6 +923,13 @@ function normalizeImageUrl(text) {
         text.innerText = msg.text || "";
 
         bubble.appendChild(text);
+
+        if (msg.edited) {
+          var edited = document.createElement("div");
+          edited.className = "dmMessageEdited";
+          edited.innerText = "(bearbeitet)";
+          bubble.appendChild(edited);
+        }
       }
 
       row.appendChild(bubble);
@@ -543,6 +944,7 @@ function normalizeImageUrl(text) {
   }
 
   async function refreshDmPanel() {
+    closeMessageMenu();
     await renderDmFriendsList();
     await renderDmConversations();
     await renderActiveChat();
@@ -555,36 +957,15 @@ function normalizeImageUrl(text) {
     imageInput.dataset.bound = "1";
 
     imageInput.addEventListener("change", async function () {
-      var currentUser = getCurrentUser();
-      var activeChat = Heavenly.state ? Heavenly.state.activeChat : null;
-      var activeChatUser = Heavenly.state ? Heavenly.state.activeChatUser : null;
       var file = imageInput.files && imageInput.files[0];
 
-      if (!currentUser || !activeChat || !activeChatUser || !file) {
+      if (!file) {
         imageInput.value = "";
         return;
       }
 
-      try {
-        var imageData = await readFileAsDataUrl(file);
-
-        saveMessage(activeChat, {
-          from: currentUser,
-          to: activeChatUser,
-          type: "image",
-          imageData: imageData,
-          time: Date.now()
-        });
-
-        imageInput.value = "";
-        await refreshDmPanel();
-      } catch (error) {
-        console.error("Image send failed", error);
-
-        if (typeof window.setFeedback === "function") {
-          window.setFeedback("Bild konnte nicht gesendet werden", false);
-        }
-      }
+      await sendImageFileToActiveChat(file);
+      imageInput.value = "";
     });
   }
 
@@ -598,6 +979,9 @@ function normalizeImageUrl(text) {
   };
 
   window.closeDmOverlay = function () {
+    closeMessageMenu();
+    closeDmActionModal();
+
     var panel = getEl("dmPanel");
     if (!panel) return;
 
@@ -641,10 +1025,13 @@ function normalizeImageUrl(text) {
 
     if (!currentUser || !input || !activeChat || !activeChatUser) return;
 
-    var text = input.value.trim();
+    var rawText = input.value || "";
+    var text = rawText.trim();
+
     if (!text) return;
 
     var message = {
+      id: createMessageId(),
       from: currentUser,
       to: activeChatUser,
       time: Date.now()
@@ -654,7 +1041,7 @@ function normalizeImageUrl(text) {
       message.type = "imageLink";
       message.imageUrl = normalizeImageUrl(text);
       message.text = text;
-     } else {
+    } else {
       message.type = "text";
       message.text = text;
     }
@@ -673,6 +1060,7 @@ function normalizeImageUrl(text) {
     if (!currentUser || !activeChat || !activeChatUser || !emote) return;
 
     saveMessage(activeChat, {
+      id: createMessageId(),
       from: currentUser,
       to: activeChatUser,
       type: "emote",
@@ -715,6 +1103,47 @@ function normalizeImageUrl(text) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       window.sendActiveMessage();
+    }
+
+    if (event.key === "Escape") {
+      closeMessageMenu();
+      closeDmActionModal();
+    }
+  });
+
+  document.addEventListener("click", function (event) {
+    if (!event.target.closest(".dmMessageActions")) {
+      closeMessageMenu();
+    }
+  });
+
+  document.addEventListener("paste", async function (event) {
+    var panel = getEl("dmPanel");
+    if (!panel || !panel.classList.contains("active")) return;
+    if (!isDmInputActive()) return;
+
+    var clipboardData = event.clipboardData;
+    if (!clipboardData || !clipboardData.items) return;
+
+    for (var i = 0; i < clipboardData.items.length; i++) {
+      var item = clipboardData.items[i];
+
+      if (!item || item.kind !== "file") {
+        continue;
+      }
+
+      if (!item.type || item.type.indexOf("image/") !== 0) {
+        continue;
+      }
+
+      var file = item.getAsFile();
+      if (!file) {
+        continue;
+      }
+
+      event.preventDefault();
+      await sendImageFileToActiveChat(file);
+      return;
     }
   });
 })();

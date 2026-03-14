@@ -319,30 +319,31 @@
           <div id="dmActiveMessages" class="dmActiveMessages"></div>
 
           <div id="dmComposer" class="dmComposer" style="display:none;">
-          <div class="dmComposerTools">
-          <button type="button" class="dmToolBtn" onclick="openDmMedia('image')">🖼</button>
-          <button type="button" class="dmToolBtn" onclick="openDmMedia('emoji')">😊</button>
-        </div>
+            <div class="dmComposerTools">
+              <button type="button" class="dmToolBtn" onclick="openDmMedia('image')">🖼</button>
+              <button type="button" class="dmToolBtn" onclick="openDmMedia('emoji')">😊</button>
+            </div>
 
-        <input
-          id="dmImageInput"
-          type="file"
-          accept="image/*"
-          hidden
-         />
+            <input
+              id="dmImageInput"
+              type="file"
+              accept="image/*"
+              hidden
+            />
 
-         <div class="dmComposerRow">
-         <input
-           id="dmMessageInput"
-           class="dmMessageInput"
-           type="text"
-           placeholder="Nachricht schreiben..."
-         />
-         <button class="dmSendBtn" type="button" onclick="sendActiveMessage()">
-           Senden
-       </button>
+            <div class="dmComposerRow">
+              <textarea
+                id="dmMessageInput"
+                class="dmMessageInput dmMessageTextarea"
+                placeholder="Nachricht schreiben..."
+                rows="1"
+              ></textarea>
+
+              <button class="dmSendBtn" type="button" onclick="sendActiveMessage()">
+                Senden
+              </button>
+            </div>
           </div>
-         </div>
         </div>
       </div>
     </div>
