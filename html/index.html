@@ -321,9 +321,15 @@
           <div id="dmComposer" class="dmComposer" style="display:none;">
             <div class="dmComposerTools">
               <button type="button" class="dmToolBtn" onclick="openDmMedia('image')">🖼</button>
-              <button type="button" class="dmToolBtn" onclick="openDmMedia('gif')">GIF</button>
               <button type="button" class="dmToolBtn" onclick="openDmMedia('emoji')">😊</button>
             </div>
+
+              <input
+                id="dmImageInput"
+                type="file"
+                accept="image/*"
+                hidden
+              />
 
             <div class="dmComposerRow">
               <input
@@ -525,6 +531,12 @@
   <script src="js/components/fortune_list.js"></script>
   <script src="js/components/fortune.js"></script>
   <script src="js/components/clock.js"></script>
+
+  <script src="js/components/media/emojis.js"></script>
+  <script src="js/components/media/emotes.js"></script>
+  <script src="js/components/media/gifs.js"></script>
+  <script src="js/components/media/media_render.js"></script>
+  <script src="js/components/media/media_picker.js"></script>
 
   <script src="js/screens/auth.js"></script>
   <script src="js/screens/profile.js"></script>

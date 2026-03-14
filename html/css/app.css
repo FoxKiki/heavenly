@@ -56,27 +56,18 @@ body{
   top:50%;
   left:50%;
   transform:translate(-50%,-50%) scale(0.95);
-
   padding:40px;
   border-radius:18px;
-
   background:rgba(0,0,0,0.55);
   backdrop-filter:blur(14px);
   border:1px solid rgba(255,255,255,0.15);
-
   text-align:center;
   color:rgb(52,197,241);
   font-family:"Palatino Linotype","Book Antiqua",Palatino,serif;
-
   z-index:9999;
-
   opacity:0;
   animation:loginFade 0.8s ease forwards;
-
-  transition:
-    opacity 0.35s ease,
-    transform 0.35s ease,
-    filter 0.35s ease;
+  transition:opacity 0.35s ease, transform 0.35s ease, filter 0.35s ease;
 }
 
 .main-box.popup-open{
@@ -95,23 +86,16 @@ body{
 .main-box button{
   position:relative;
   z-index:10000;
-
   display:block;
   width:200px;
   margin:10px auto;
   padding:12px;
-
   border:none;
   border-radius:10px;
-
   background:linear-gradient(135deg,#7c3aed,#9333ea);
   color:white;
   cursor:pointer;
-
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    background 0.2s ease;
+  transition:transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .main-box button:hover{
@@ -146,25 +130,20 @@ body{
   position:fixed;
   inset:0;
   padding:20px;
-
   display:flex;
   flex-direction:column;
   gap:15px;
-
   color:white;
 }
 
 .homeHeader{
   position:relative;
   z-index:50;
-
   display:flex;
   align-items:center;
   justify-content:space-between;
-
   padding:12px 16px;
   border-radius:14px;
-
   background:rgba(255,255,255,0.08);
   backdrop-filter:blur(12px);
   border:1px solid rgba(255,255,255,0.15);
@@ -209,36 +188,28 @@ body{
   font-size:13px;
 }
 
-.newsBtn{
-  padding:8px 10px;
+.newsBtn,
+.dmBtn{
   border-radius:12px;
   border:1px solid rgba(255,255,255,0.12);
-
   background:rgba(255,255,255,0.08);
   color:white;
   cursor:pointer;
 }
 
-.newsBtn:hover{
-  background:rgba(255,255,255,0.15);
+.newsBtn{
+  padding:8px 10px;
 }
 
 .dmBtn{
   width:36px;
   height:36px;
-
   display:flex;
   align-items:center;
   justify-content:center;
-
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,0.12);
-
-  background:rgba(255,255,255,0.08);
-  color:white;
-  cursor:pointer;
 }
 
+.newsBtn:hover,
 .dmBtn:hover{
   background:rgba(255,255,255,0.15);
 }
@@ -253,19 +224,14 @@ body{
 .globalSearch{
   width:100%;
   box-sizing:border-box;
-
   padding:12px 14px 12px 42px;
   border-radius:999px;
   border:1px solid rgba(255,255,255,0.10);
   outline:none;
-
   background:rgba(0,0,0,0.22);
   color:white;
   font-size:14px;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
+  transition:background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .globalSearchBar{
@@ -290,7 +256,9 @@ body{
   box-shadow:0 0 0 3px rgba(124,58,237,0.12);
 }
 
-.globalSearch::placeholder{
+.globalSearch::placeholder,
+.searchInput::placeholder,
+.dmMessageInput::placeholder{
   color:rgba(255,255,255,0.55);
 }
 
@@ -299,13 +267,10 @@ body{
   top:calc(100% + 8px);
   left:0;
   width:100%;
-
   display:none;
   z-index:9999;
-
   padding:8px;
   border-radius:18px;
-
   background:rgba(15,18,30,0.96);
   backdrop-filter:blur(14px);
   border:1px solid rgba(255,255,255,0.12);
@@ -334,7 +299,6 @@ body{
   padding:10px 14px;
   border:none;
   border-radius:10px;
-
   background:#7c3aed;
   color:white;
   cursor:pointer;
@@ -348,7 +312,6 @@ body{
 .homeContent{
   position:relative;
   z-index:1;
-
   display:flex;
   flex:1;
   gap:15px;
@@ -359,7 +322,6 @@ body{
 .usersBox{
   padding:14px;
   border-radius:14px;
-
   background:rgba(255,255,255,0.06);
   backdrop-filter:blur(12px);
   border:1px solid rgba(255,255,255,0.12);
@@ -387,7 +349,6 @@ body{
   margin-top:10px;
   padding:10px;
   border-radius:10px;
-
   background:rgba(0,0,0,0.25);
   border:1px solid rgba(255,255,255,0.08);
 }
@@ -396,35 +357,30 @@ body{
   width:100%;
   margin-top:8px;
   padding:10px;
-
   border-radius:10px;
   border:1px solid rgba(255,255,255,0.08);
   outline:none;
-
   background:rgba(0,0,0,0.25);
   color:white;
 }
 
-.searchInput::placeholder{
-  color:rgba(255,255,255,0.55);
+.searchInputSmall{
+  flex:1;
+  margin-top:0;
 }
 
 .userChipAvatar{
   width:30px;
   height:30px;
   border-radius:50%;
-
   display:flex;
   align-items:center;
   justify-content:center;
-
   background:rgba(255,255,255,0.12);
   border:1px solid rgba(255,255,255,0.20);
-
   color:white;
   font-weight:700;
   font-size:14px;
-
   background-size:cover;
   background-position:center;
   background-repeat:no-repeat;
@@ -435,11 +391,9 @@ body{
   display:flex;
   align-items:center;
   gap:10px;
-
   margin-top:10px;
   padding:10px;
   border-radius:12px;
-
   background:rgba(0,0,0,0.25);
   border:1px solid rgba(255,255,255,0.08);
 }
@@ -448,17 +402,13 @@ body{
   width:42px;
   height:42px;
   border-radius:50%;
-
   display:flex;
   align-items:center;
   justify-content:center;
-
   background:rgba(255,255,255,0.10);
   border:1px solid rgba(255,255,255,0.10);
-
   color:white;
   font-weight:600;
-
   background-size:cover;
   background-position:center;
   background-repeat:no-repeat;
@@ -490,21 +440,14 @@ body{
   text-overflow:ellipsis;
 }
 
-.friendsToolbar{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  margin-top:8px;
-}
-
-.searchInputSmall{
-  flex:1;
-  margin-top:0;
-}
-
+.friendsToolbar,
 .usersBoxHeader{
   display:flex;
   align-items:center;
+  gap:8px;
+}
+
+.usersBoxHeader{
   justify-content:space-between;
   gap:10px;
 }
@@ -513,22 +456,21 @@ body{
   width:40px;
   height:40px;
   flex:0 0 40px;
-
   position:relative;
   display:flex;
   align-items:center;
   justify-content:center;
-
   border:none;
   border-radius:10px;
   cursor:pointer;
-
   background:rgba(255,255,255,0.08);
   border:1px solid rgba(255,255,255,0.12);
   color:white;
 }
 
-.friendRequestBtn:hover{
+.friendRequestBtn:hover,
+.requestIconBtn:hover,
+.friendActionBtn:hover{
   background:rgba(255,255,255,0.15);
 }
 
@@ -541,14 +483,11 @@ body{
   position:absolute;
   top:6px;
   right:6px;
-
   width:8px;
   height:8px;
   border-radius:50%;
-
   background:#ff4d6d;
   box-shadow:0 0 8px rgba(255,77,109,0.75);
-
   display:none;
 }
 
@@ -560,11 +499,9 @@ body{
   display:flex;
   align-items:center;
   gap:10px;
-
   margin-top:10px;
   padding:10px;
   border-radius:12px;
-
   background:rgba(0,0,0,0.25);
   border:1px solid rgba(255,255,255,0.08);
 }
@@ -573,14 +510,11 @@ body{
   width:36px;
   height:36px;
   border-radius:50%;
-
   display:flex;
   align-items:center;
   justify-content:center;
-
   background:rgba(255,255,255,0.10);
   border:1px solid rgba(255,255,255,0.10);
-
   color:white;
   font-weight:700;
   cursor:pointer;
@@ -603,25 +537,24 @@ body{
   gap:8px;
 }
 
-.requestIconBtn{
+.requestIconBtn,
+.friendActionBtn{
   width:32px;
   height:32px;
-
   display:flex;
   align-items:center;
   justify-content:center;
-
   border:none;
   border-radius:10px;
   cursor:pointer;
-
   background:rgba(255,255,255,0.08);
   border:1px solid rgba(255,255,255,0.12);
   color:white;
 }
 
-.requestIconBtn:hover{
-  background:rgba(255,255,255,0.15);
+.friendActionBtn{
+  margin-left:auto;
+  flex:0 0 32px;
 }
 
 .fortuneBox{
@@ -631,14 +564,11 @@ body{
   box-sizing:border-box;
   padding:8px 14px;
   border-radius:12px;
-
   background:rgba(255,255,255,0.06);
   border:1px solid rgba(255,255,255,0.12);
   backdrop-filter:blur(8px);
-
   color:rgba(255,255,255,0.88);
   font-size:13px;
-
   transition:background 0.25s ease, border-color 0.25s ease;
 }
 
@@ -663,15 +593,12 @@ body{
   min-width:92px;
   max-width:92px;
   box-sizing:border-box;
-
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-
   padding:4px 6px;
   border-radius:10px;
-
   background:rgba(255,255,255,0.06);
   border:1px solid rgba(255,255,255,0.12);
   backdrop-filter:blur(8px);
@@ -695,29 +622,6 @@ body{
   font-variant-numeric:tabular-nums;
   font-feature-settings:"tnum";
   text-align:center;
-}
-
-.friendActionBtn{
-  width:32px;
-  height:32px;
-
-  margin-left:auto;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.12);
-  color:white;
-  flex:0 0 32px;
-}
-
-.friendActionBtn:hover{
-  background:rgba(255,255,255,0.15);
 }
 
 .friendClickable{
@@ -744,10 +648,8 @@ body{
   display:flex;
   align-items:center;
   gap:10px;
-
   padding:10px;
   border-radius:12px;
-
   background:rgba(255,255,255,0.06);
   border:1px solid rgba(255,255,255,0.08);
   cursor:pointer;
@@ -761,18 +663,14 @@ body{
   width:36px;
   height:36px;
   border-radius:50%;
-
   display:flex;
   align-items:center;
   justify-content:center;
-
   background:rgba(255,255,255,0.10);
   border:1px solid rgba(255,255,255,0.10);
-
   color:white;
   font-weight:700;
   flex:0 0 36px;
-
   background-size:cover;
   background-position:center;
   background-repeat:no-repeat;
@@ -802,17 +700,13 @@ body{
   position:fixed;
   inset:0;
   padding:20px;
-
   display:none;
   flex-direction:column;
   gap:15px;
-
   color:white;
-
   opacity:0;
   transform:scale(0.985);
   pointer-events:none;
-
   transition:opacity 220ms ease, transform 220ms ease;
   z-index:30;
   overflow-y:auto;
@@ -830,15 +724,12 @@ body{
   top:20px;
   left:20px;
   z-index:60;
-
   background:rgba(255,255,255,0.08);
   border:1px solid rgba(255,255,255,0.15);
   color:white;
-
   padding:10px 12px;
   border-radius:12px;
   cursor:pointer;
-
   backdrop-filter:blur(12px);
   box-shadow:0 10px 30px rgba(0,0,0,0.55);
 }
@@ -857,11 +748,9 @@ body{
   height:300px;
   border-radius:16px;
   cursor:pointer;
-
   background:rgba(255,255,255,0.06);
   border:1px solid rgba(255,255,255,0.12);
   box-shadow:0 10px 30px rgba(0,0,0,0.35);
-
   overflow:visible;
 }
 
@@ -886,12 +775,10 @@ body{
   position:absolute;
   left:20px;
   bottom:-40px;
-
   display:flex;
   align-items:center;
   gap:14px;
   cursor:pointer;
-
   z-index:20;
   pointer-events:auto;
 }
@@ -900,17 +787,13 @@ body{
   width:96px;
   height:96px;
   border-radius:50%;
-
   display:flex;
   align-items:center;
   justify-content:center;
-
   background:rgba(255,255,255,0.10);
   border:3px solid rgba(0,0,0,0.35);
   box-shadow:0 10px 25px rgba(0,0,0,0.35);
-
   overflow:hidden;
-
   background-size:cover;
   background-position:center;
   background-repeat:no-repeat;
@@ -943,15 +826,12 @@ body{
 .profileStatus{
   margin-top:8px;
   padding:8px 14px;
-
   font-size:15px;
   line-height:1.35;
   border-radius:12px;
-
   background:rgba(0,0,0,0.35);
   border:1px solid rgba(255,255,255,0.15);
   backdrop-filter:blur(6px);
-
   min-width:280px;
   max-width:420px;
   word-break:break-word;
@@ -968,15 +848,12 @@ body{
   width:320px;
   min-width:320px;
   max-width:320px;
-
   padding:20px;
   border-radius:14px;
-
   background:rgba(255,255,255,0.06);
   backdrop-filter:blur(12px);
   border:1px solid rgba(255,255,255,0.12);
   box-shadow:0 10px 30px rgba(0,0,0,0.45);
-
   position:relative;
   z-index:5;
 }
@@ -986,14 +863,11 @@ body{
   min-width:0;
   padding:24px;
   min-height:200px;
-
   border-radius:14px;
-
   background:rgba(255,255,255,0.06);
   backdrop-filter:blur(12px);
   border:1px solid rgba(255,255,255,0.12);
   box-shadow:0 10px 30px rgba(0,0,0,0.45);
-
   position:relative;
   z-index:1;
 }
@@ -1010,10 +884,8 @@ body{
   align-items:center;
   justify-content:space-between;
   gap:12px;
-
   padding:10px 12px;
   border-radius:12px;
-
   background:rgba(0,0,0,0.22);
   border:1px solid rgba(255,255,255,0.08);
 }
@@ -1042,17 +914,12 @@ body{
   border:none;
   border-radius:12px;
   cursor:pointer;
-
   background:rgba(255,255,255,0.08);
   border:1px solid rgba(255,255,255,0.12);
   color:white;
   font-size:14px;
-
   backdrop-filter:blur(8px);
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.18s ease;
+  transition:background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 }
 
 .profileInlineBtn,
@@ -1061,15 +928,11 @@ body{
   border:none;
   border-radius:10px;
   cursor:pointer;
-
   background:rgba(255,255,255,0.08);
   border:1px solid rgba(255,255,255,0.12);
   color:white;
   font-size:13px;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.18s ease;
+  transition:background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 }
 
 .profileInfoBtn:hover,
@@ -1107,13 +970,10 @@ body{
   top:42px;
   left:0;
   min-width:190px;
-
   display:none;
   z-index:10000;
-
   padding:10px;
   border-radius:14px;
-
   background:rgba(15,18,30,0.96);
   backdrop-filter:blur(12px);
   border:1px solid rgba(255,255,255,0.14);
@@ -1132,26 +992,18 @@ body{
 .foreignProfileMenu button{
   width:100%;
   text-align:left;
-
   display:flex;
   align-items:center;
   gap:8px;
-
   padding:10px 12px;
   border:none;
   border-radius:10px;
   cursor:pointer;
-
   background:rgba(255,255,255,0.08);
   border:1px solid rgba(255,255,255,0.10);
   color:white;
   font-size:14px;
-
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
+  transition:background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .foreignProfileMenu button:hover{
@@ -1165,13 +1017,10 @@ body{
   display:none !important;
   position:fixed !important;
   inset:0 !important;
-
   align-items:center !important;
   justify-content:center !important;
-
   background:rgba(0,0,0,0.72) !important;
   backdrop-filter:blur(8px) !important;
-
   z-index:999999 !important;
 }
 
@@ -1182,24 +1031,20 @@ body{
 .popup-box{
   position:relative !important;
   z-index:1000000 !important;
-
   width:380px !important;
   max-width:92vw !important;
   min-height:120px !important;
   box-sizing:border-box !important;
   padding:30px !important;
   border-radius:24px !important;
-
   background:rgba(8,10,20,0.98) !important;
   border:1px solid rgba(255,255,255,0.12) !important;
   box-shadow:
     0 0 0 1px rgba(255,255,255,0.03) inset,
     0 20px 60px rgba(0,0,0,0.5),
     0 0 35px rgba(124,58,237,0.18) !important;
-
   color:rgb(52,197,241) !important;
   font-family:"Palatino Linotype","Book Antiqua",Palatino,serif !important;
-
   opacity:1 !important;
   visibility:visible !important;
 }
@@ -1221,20 +1066,13 @@ body{
   box-sizing:border-box !important;
   margin:10px 0 !important;
   padding:13px 14px !important;
-
   border:none !important;
   outline:none !important;
   border-radius:12px !important;
-
   background:rgba(255,255,255,0.1) !important;
   color:white !important;
   font-size:15px !important;
-
   box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12) !important;
-}
-
-.popup-box input::placeholder{
-  color:rgba(255,255,255,0.58) !important;
 }
 
 .popup-box button{
@@ -1243,10 +1081,8 @@ body{
   box-sizing:border-box !important;
   margin-top:12px !important;
   padding:12px !important;
-
   border:none !important;
   border-radius:12px !important;
-
   background:linear-gradient(135deg,#7c3aed,#9333ea) !important;
   color:white !important;
   font-size:16px !important;
@@ -1269,14 +1105,11 @@ body{
   width:42px;
   height:42px;
   border-radius:12px;
-
   border:1px solid rgba(255,255,255,0.15);
   background:rgba(255,255,255,0.08);
   color:white;
-
   cursor:pointer;
   font-size:18px;
-
   display:flex;
   align-items:center;
   justify-content:center;
@@ -1291,19 +1124,15 @@ body{
   right:0;
   top:50px;
   min-width:190px;
-
   background:rgba(20,20,20,0.65);
   backdrop-filter:blur(14px);
   border:1px solid rgba(255,255,255,0.12);
   border-radius:14px;
   overflow:hidden;
-
   box-shadow:0 16px 40px rgba(0,0,0,0.60);
-
   opacity:0;
   transform:translateY(-8px) scale(0.98);
   pointer-events:none;
-
   transition:opacity 180ms ease, transform 180ms ease;
   z-index:100;
 }
@@ -1318,7 +1147,6 @@ body{
   width:100%;
   padding:11px 12px;
   text-align:left;
-
   background:transparent;
   border:none;
   color:white;
@@ -1333,19 +1161,15 @@ body{
 .imageViewer{
   position:fixed;
   inset:0;
-
   display:flex;
   align-items:center;
   justify-content:center;
-
   background:rgba(0,0,0,0.65);
   backdrop-filter:blur(8px);
-
   opacity:0;
   pointer-events:none;
   transition:opacity 200ms ease;
-
-  z-index:200;
+  z-index:1000001;
 }
 
 .imageViewer.open{
@@ -1356,14 +1180,11 @@ body{
 .imageViewerBox{
   width:min(92vw, 820px);
   max-height:88vh;
-
   border-radius:18px;
   overflow:hidden;
-
   background:rgba(20,20,20,0.55);
   border:1px solid rgba(255,255,255,0.14);
   box-shadow:0 18px 60px rgba(0,0,0,0.70);
-
   transform:translateY(10px) scale(0.98);
   transition:transform 200ms ease;
 }
@@ -1466,10 +1287,18 @@ body{
 
 .dmColumnHeader,
 .dmChatHeader{
-  padding:18px 18px 14px;
+  box-sizing:border-box;
+  min-height:56px;
+  display:flex;
+  align-items:center;
+  padding:0 18px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
   font-size:16px;
   font-weight:800;
-  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+
+.dmChatHeader{
+  background:transparent;
 }
 
 .dmFriendsList,
@@ -1661,6 +1490,39 @@ body{
   word-break:break-word;
 }
 
+.dmMessageImage{
+  display:block;
+  max-width:min(320px, 100%);
+  max-height:320px;
+  border-radius:14px;
+  margin-top:6px;
+  cursor:pointer;
+  object-fit:cover;
+  border:1px solid rgba(255,255,255,0.10);
+}
+
+.dmMessageBubble.own .dmMessageImage{
+  border-color:rgba(255,255,255,0.18);
+}
+
+.dmMessageEmote{
+  display:block;
+  max-width:96px;
+  max-height:96px;
+  margin-top:6px;
+  object-fit:contain;
+  border-radius:12px;
+}
+
+.dmMessageGif{
+  display:block;
+  max-width:180px;
+  max-height:180px;
+  margin-top:6px;
+  object-fit:contain;
+  border-radius:12px;
+}
+
 .dmComposer{
   padding:14px 16px;
   border-top:1px solid rgba(255,255,255,0.08);
@@ -1700,10 +1562,6 @@ body{
   color:white;
 }
 
-.dmMessageInput::placeholder{
-  color:rgba(255,255,255,0.55);
-}
-
 .dmSendBtn{
   padding:12px 16px;
   border:none;
@@ -1712,6 +1570,140 @@ body{
   background:linear-gradient(135deg,#7c3aed,#9333ea);
   color:white;
   font-weight:700;
+}
+
+.heavenlyMediaPicker{
+  position:fixed;
+  right:28px;
+  bottom:110px;
+  width:min(380px, 94vw);
+  max-height:min(460px, 72vh);
+  display:flex;
+  flex-direction:column;
+  border-radius:18px;
+  overflow:hidden;
+  background:rgba(15,18,30,0.98);
+  border:1px solid rgba(255,255,255,0.12);
+  box-shadow:0 20px 60px rgba(0,0,0,0.55);
+  backdrop-filter:blur(14px);
+  z-index:1000003;
+}
+
+.heavenlyMediaPickerHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 14px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.04);
+}
+
+.heavenlyMediaPickerTitle{
+  font-size:15px;
+  font-weight:800;
+  color:white;
+}
+
+.heavenlyMediaPickerClose{
+  width:34px;
+  height:34px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  background:rgba(255,255,255,0.08);
+  color:white;
+}
+
+.heavenlyMediaTabs{
+  display:flex;
+  gap:8px;
+  padding:10px 12px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.03);
+}
+
+.heavenlyMediaTab{
+  padding:8px 12px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  background:rgba(255,255,255,0.08);
+  color:white;
+  font-size:13px;
+  font-weight:700;
+}
+
+.heavenlyMediaTab.active{
+  background:rgba(124,58,237,0.35);
+  border:1px solid rgba(167,139,250,0.35);
+}
+
+.heavenlyMediaPickerBody{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(88px, 1fr));
+  gap:10px;
+  padding:12px;
+  overflow-y:auto;
+}
+
+.heavenlyEmojiBtn{
+  width:100%;
+  min-height:56px;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  background:rgba(255,255,255,0.06);
+  color:white;
+  font-size:24px;
+}
+
+.heavenlyEmojiBtn:hover{
+  background:rgba(255,255,255,0.14);
+}
+
+.heavenlyAssetBtn{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  gap:8px;
+  min-height:120px;
+  padding:8px;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  background:rgba(255,255,255,0.06);
+  color:white;
+  text-align:center;
+}
+
+.heavenlyAssetBtn:hover{
+  background:rgba(255,255,255,0.14);
+}
+
+.heavenlyAssetPreview{
+  width:72px;
+  height:72px;
+  object-fit:contain;
+  border-radius:10px;
+  display:block;
+}
+
+.heavenlyAssetLabel{
+  font-size:12px;
+  line-height:1.2;
+  opacity:0.88;
+  word-break:break-word;
+}
+
+.heavenlyMediaPickerEmpty{
+  grid-column:1 / -1;
+  padding:12px;
+  border-radius:12px;
+  background:rgba(255,255,255,0.06);
+  color:rgba(255,255,255,0.8);
+  font-size:13px;
 }
 
 @media (max-width: 1200px){

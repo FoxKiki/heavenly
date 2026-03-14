@@ -72,6 +72,7 @@ window.Heavenly = window.Heavenly || {};
 
   function getChatMessages(chatId) {
     var currentUser = getCurrentUser();
+
     if (!userHasAccessToChat(chatId, currentUser)) {
       return [];
     }
@@ -113,12 +114,34 @@ window.Heavenly = window.Heavenly || {};
     return hours + ":" + minutes;
   }
 
+  function readFileAsDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file) {
+        reject(new Error("No file selected"));
+        return;
+      }
+
+      var reader = new FileReader();
+
+      reader.onload = function (event) {
+        resolve(event.target.result);
+      };
+
+      reader.onerror = function () {
+        reject(new Error("File could not be read"));
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function getFriends() {
     var user = getCurrentUser();
     if (!user || !Heavenly.api || !Heavenly.api.getFriends) return [];
 
     try {
       var result = await Heavenly.api.getFriends(user);
+
       if (result && result.ok && Array.isArray(result.data)) {
         return result.data.filter(function (name) {
           return normalizeName(name) !== normalizeName(user);
@@ -136,6 +159,7 @@ window.Heavenly = window.Heavenly || {};
 
     try {
       var result = await Heavenly.api.getProfile(name);
+
       if (result && result.ok && result.data && result.data.settings) {
         return result.data.settings.status || "";
       }
@@ -151,6 +175,7 @@ window.Heavenly = window.Heavenly || {};
 
     try {
       var result = await Heavenly.api.getAvatar(name);
+
       if (result && result.ok && result.data) {
         return result.data;
       }
@@ -345,8 +370,20 @@ window.Heavenly = window.Heavenly || {};
       preview.className = "dmConversationPreview";
 
       if (row.lastMessage) {
-        var prefix = normalizeName(row.lastMessage.from) === normalizeName(currentUser) ? "Du: " : "";
-        preview.innerText = prefix + row.lastMessage.text;
+        var prefix =
+          normalizeName(row.lastMessage.from) === normalizeName(currentUser)
+            ? "Du: "
+            : "";
+
+        if (row.lastMessage.type === "image") {
+          preview.innerText = prefix + "Bild gesendet";
+        } else if (row.lastMessage.type === "emote") {
+          preview.innerText = prefix + "Emote gesendet";
+        } else if (row.lastMessage.type === "gif") {
+          preview.innerText = prefix + "GIF gesendet";
+        } else {
+          preview.innerText = prefix + (row.lastMessage.text || "");
+        }
       } else {
         preview.innerText = "Noch keine Nachrichten";
       }
@@ -391,6 +428,7 @@ window.Heavenly = window.Heavenly || {};
 
     if (messages.length === 0) {
       messagesEl.innerHTML = '<div class="dmChatHint">Schreib deine erste Nachricht ✨</div>';
+
       if (input) {
         input.focus();
       }
@@ -403,12 +441,14 @@ window.Heavenly = window.Heavenly || {};
 
       var row = document.createElement("div");
       row.className = "dmMessageRow";
+
       if (isOwn) {
         row.classList.add("own");
       }
 
       var bubble = document.createElement("div");
       bubble.className = "dmMessageBubble";
+
       if (isOwn) {
         bubble.classList.add("own");
       }
@@ -417,12 +457,46 @@ window.Heavenly = window.Heavenly || {};
       meta.className = "dmMessageMeta";
       meta.innerText = msg.from + " • " + formatTime(msg.time);
 
-      var text = document.createElement("div");
-      text.className = "dmMessageText";
-      text.innerText = msg.text;
-
       bubble.appendChild(meta);
-      bubble.appendChild(text);
+
+      if (msg.type === "image" && msg.imageData) {
+        var image = document.createElement("img");
+        image.className = "dmMessageImage";
+        image.src = msg.imageData;
+        image.alt = "Gesendetes Bild";
+        image.onclick = function () {
+          var viewer = getEl("imageViewer");
+          var viewerImg = getEl("imageViewerImg");
+
+          if (viewer && viewerImg) {
+            viewerImg.src = this.src;
+            viewer.classList.add("open");
+          }
+        };
+
+        bubble.appendChild(image);
+      } else if (msg.type === "emote" && msg.emoteSrc) {
+        var emote = document.createElement("img");
+        emote.className = "dmMessageEmote";
+        emote.src = msg.emoteSrc;
+        emote.alt = msg.emoteId || "Emote";
+
+        bubble.appendChild(emote);
+      } else if (msg.type === "gif" && msg.gifSrc) {
+        var gif = document.createElement("img");
+        gif.className = "dmMessageGif";
+        gif.src = msg.gifSrc;
+        gif.alt = msg.gifId || "GIF";
+
+        bubble.appendChild(gif);
+      } else {
+        var text = document.createElement("div");
+        text.className = "dmMessageText";
+        text.innerText = msg.text || "";
+
+        bubble.appendChild(text);
+      }
+
       row.appendChild(bubble);
       messagesEl.appendChild(row);
     }
@@ -440,10 +514,51 @@ window.Heavenly = window.Heavenly || {};
     await renderActiveChat();
   }
 
+  function initDmImageUpload() {
+    var imageInput = getEl("dmImageInput");
+    if (!imageInput || imageInput.dataset.bound) return;
+
+    imageInput.dataset.bound = "1";
+
+    imageInput.addEventListener("change", async function () {
+      var currentUser = getCurrentUser();
+      var activeChat = Heavenly.state ? Heavenly.state.activeChat : null;
+      var activeChatUser = Heavenly.state ? Heavenly.state.activeChatUser : null;
+      var file = imageInput.files && imageInput.files[0];
+
+      if (!currentUser || !activeChat || !activeChatUser || !file) {
+        imageInput.value = "";
+        return;
+      }
+
+      try {
+        var imageData = await readFileAsDataUrl(file);
+
+        saveMessage(activeChat, {
+          from: currentUser,
+          to: activeChatUser,
+          type: "image",
+          imageData: imageData,
+          time: Date.now()
+        });
+
+        imageInput.value = "";
+        await refreshDmPanel();
+      } catch (error) {
+        console.error("Image send failed", error);
+
+        if (typeof window.setFeedback === "function") {
+          window.setFeedback("Bild konnte nicht gesendet werden", false);
+        }
+      }
+    });
+  }
+
   window.openDmOverlay = async function () {
     var panel = getEl("dmPanel");
     if (!panel) return;
 
+    initDmImageUpload();
     panel.classList.add("active");
     await refreshDmPanel();
   };
@@ -498,6 +613,7 @@ window.Heavenly = window.Heavenly || {};
     saveMessage(activeChat, {
       from: currentUser,
       to: activeChatUser,
+      type: "text",
       text: text,
       time: Date.now()
     });
@@ -506,21 +622,72 @@ window.Heavenly = window.Heavenly || {};
     await refreshDmPanel();
   };
 
+  window.sendActiveEmote = async function (emote) {
+    var currentUser = getCurrentUser();
+    var activeChat = Heavenly.state ? Heavenly.state.activeChat : null;
+    var activeChatUser = Heavenly.state ? Heavenly.state.activeChatUser : null;
+
+    if (!currentUser || !activeChat || !activeChatUser || !emote) return;
+
+    saveMessage(activeChat, {
+      from: currentUser,
+      to: activeChatUser,
+      type: "emote",
+      emoteId: emote.id || "",
+      emoteSrc: emote.src || "",
+      time: Date.now()
+    });
+
+    await refreshDmPanel();
+  };
+
+  window.sendActiveGif = async function (gif) {
+    var currentUser = getCurrentUser();
+    var activeChat = Heavenly.state ? Heavenly.state.activeChat : null;
+    var activeChatUser = Heavenly.state ? Heavenly.state.activeChatUser : null;
+
+    if (!currentUser || !activeChat || !activeChatUser || !gif) return;
+
+    saveMessage(activeChat, {
+      from: currentUser,
+      to: activeChatUser,
+      type: "gif",
+      gifId: gif.id || "",
+      gifSrc: gif.src || "",
+      time: Date.now()
+    });
+
+    await refreshDmPanel();
+  };
+
   window.openDmMedia = function (type) {
-    if (typeof window.setFeedback !== "function") return;
-
     if (type === "image") {
-      window.setFeedback("Bildversand kommt als Nächstes 😊", true);
-      return;
-    }
-
-    if (type === "gif") {
-      window.setFeedback("GIFs kommen als Nächstes 😊", true);
+      var imageInput = getEl("dmImageInput");
+      if (imageInput) {
+        imageInput.click();
+      }
       return;
     }
 
     if (type === "emoji") {
-      window.setFeedback("Emotes kommen als Nächstes 😊", true);
+      if (typeof window.openEmojiPicker === "function") {
+        window.openEmojiPicker();
+      }
+      return;
+    }
+
+    if (type === "emote") {
+      if (typeof window.openEmotePicker === "function") {
+        window.openEmotePicker();
+      }
+      return;
+    }
+
+    if (type === "gif") {
+      if (typeof window.openGifPicker === "function") {
+        window.openGifPicker();
+      }
+      return;
     }
   };
 
