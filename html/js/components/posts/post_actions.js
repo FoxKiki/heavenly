@@ -33,26 +33,30 @@ Heavenly.posts = Heavenly.posts || {};
     var input = document.getElementById(inputId);
     if (!input) return;
 
-    var text = input.value || "";
-    var comment = Heavenly.posts.store.addComment(postId, text);
+    var text = String(input.value || "").trim();
+    if (!text) return;
 
+    var comment = Heavenly.posts.store.addComment(postId, text);
     if (!comment) return;
 
     input.value = "";
+    input.style.height = "auto";
     rerenderFeed(feedType, options);
   }
 
-  function editPost(postId, currentText, feedType, options) {
-    var nextText = window.prompt("Beitrag bearbeiten:", currentText || "");
-    if (nextText === null) return;
+  function editPost(postId, nextText, feedType, options) {
+    if (!Heavenly.posts || !Heavenly.posts.store) return;
+    if (nextText === null || nextText === undefined) return;
+
+    nextText = String(nextText).trim();
+    if (!nextText) return;
 
     Heavenly.posts.store.editPost(postId, nextText);
     rerenderFeed(feedType, options);
   }
 
   function deletePost(postId, feedType, options) {
-    var ok = window.confirm("Beitrag wirklich löschen?");
-    if (!ok) return;
+    if (!Heavenly.posts || !Heavenly.posts.store) return;
 
     Heavenly.posts.store.deletePost(postId);
     rerenderFeed(feedType, options);

@@ -2266,28 +2266,81 @@ body{
   word-break:break-word;
 }
 
-.postOwnerActions{
-  display:flex;
-  gap:8px;
-  margin:0 0 10px;
+.postMenuWrap{
+  position:relative;
+  margin-left:auto;
+  flex:0 0 auto;
 }
 
-.postOwnerBtn{
-  min-height:34px;
-  padding:0 12px;
+.postMenuBtn{
+  width:30px;
+  height:30px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   border:none;
   border-radius:10px;
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.10);
-  color:white;
   cursor:pointer;
+  background:rgba(255,255,255,0.08);
+  color:white;
+  opacity:0;
+  transition:opacity 0.18s ease, background 0.18s ease;
 }
 
-.postOwnerBtn:hover,
+.postCard:hover .postMenuBtn,
+.postMenuBtn.active{
+  opacity:1;
+}
+
+.postMenuBtn:hover{
+  background:rgba(255,255,255,0.16);
+}
+
+.postMenu{
+  position:absolute;
+  top:36px;
+  right:0;
+  min-width:150px;
+  display:none;
+  flex-direction:column;
+  gap:6px;
+  padding:8px;
+  border-radius:12px;
+  background:rgba(15,18,30,0.98);
+  border:1px solid rgba(255,255,255,0.12);
+  box-shadow:0 14px 30px rgba(0,0,0,0.35);
+  z-index:20;
+}
+
+.postMenu.open{
+  display:flex;
+}
+
+.postMenu button{
+  width:100%;
+  padding:9px 10px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  text-align:left;
+  background:rgba(255,255,255,0.06);
+  color:white;
+  font-size:13px;
+}
+
+.postMenu button:hover{
+  background:rgba(255,255,255,0.14);
+}
+
+.postMenu button:last-child{
+  color:#ff7b7b;
+}
+
 .postActionBtn:hover,
 .postCommentSend:hover{
   background:rgba(255,255,255,0.14);
 }
+
 
 .postCommentActions{
   margin-top:8px;
