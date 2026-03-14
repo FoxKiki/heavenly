@@ -2,6 +2,8 @@ window.Heavenly = window.Heavenly || {};
 Heavenly.posts = Heavenly.posts || {};
 
 (function () {
+  var commentComposerState = {};
+
   function getCurrentUser() {
     return Heavenly && Heavenly.state ? Heavenly.state.currentUser : null;
   }
@@ -32,6 +34,132 @@ Heavenly.posts = Heavenly.posts || {};
 
   function encodeText(value) {
     return encodeURIComponent(String(value || ""));
+  }
+
+  function ensureCommentComposerState(inputId) {
+    if (!commentComposerState[inputId]) {
+      commentComposerState[inputId] = {
+        images: []
+      };
+    }
+
+    return commentComposerState[inputId];
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file) {
+        reject(new Error("No file selected"));
+        return;
+      }
+
+      var reader = new FileReader();
+
+      reader.onload = function (event) {
+        resolve(event.target.result);
+      };
+
+      reader.onerror = function () {
+        reject(new Error("File could not be read"));
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function autoResizeTextarea(textarea, maxHeight) {
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    textarea.style.height = Math.min(textarea.scrollHeight, maxHeight || 150) + "px";
+  }
+
+  function focusCommentInput(inputId) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+
+    input.focus();
+
+    if (typeof input.selectionStart === "number" && typeof input.selectionEnd === "number") {
+      var end = String(input.value || "").length;
+      input.selectionStart = end;
+      input.selectionEnd = end;
+    }
+  }
+
+  function renderCommentPreview(inputId) {
+    var state = ensureCommentComposerState(inputId);
+    var preview = document.getElementById(inputId + "_preview");
+    if (!preview) return;
+
+    preview.innerHTML = "";
+
+    if (!state.images.length) {
+      preview.style.display = "none";
+      return;
+    }
+
+    preview.style.display = "flex";
+
+    state.images.forEach(function (src, index) {
+      var item = document.createElement("div");
+      item.className = "commentComposerPreviewItem";
+
+      var img = document.createElement("img");
+      img.className = "commentComposerPreviewImage";
+      img.src = src;
+      img.alt = "Kommentar Bild";
+
+      var removeBtn = document.createElement("button");
+      removeBtn.className = "commentComposerPreviewRemove";
+      removeBtn.type = "button";
+      removeBtn.innerText = "✕";
+      removeBtn.onclick = function () {
+        state.images.splice(index, 1);
+        renderCommentPreview(inputId);
+        focusCommentInput(inputId);
+      };
+
+      item.appendChild(img);
+      item.appendChild(removeBtn);
+      preview.appendChild(item);
+    });
+  }
+
+  async function addFilesToCommentComposer(inputId, files) {
+    var state = ensureCommentComposerState(inputId);
+    var list = Array.prototype.slice.call(files || []);
+    if (!list.length) return;
+
+    for (var i = 0; i < list.length; i++) {
+      var file = list[i];
+
+      if (!file || !file.type || file.type.indexOf("image/") !== 0) {
+        continue;
+      }
+
+      try {
+        var dataUrl = await readFileAsDataUrl(file);
+        state.images.push(dataUrl);
+      } catch (error) {
+        console.error("Comment image read failed", error);
+      }
+    }
+
+    renderCommentPreview(inputId);
+  }
+
+  function resetCommentComposer(inputId) {
+    var input = document.getElementById(inputId);
+    var state = ensureCommentComposerState(inputId);
+
+    if (input) {
+      input.value = "";
+      autoResizeTextarea(input, 150);
+    }
+
+    state.images = [];
+    renderCommentPreview(inputId);
   }
 
   function closePostMenus() {
@@ -121,14 +249,7 @@ Heavenly.posts = Heavenly.posts || {};
     if (ownPost) {
       menuMarkup = [
         '<div class="postMenuWrap">',
-        '<button',
-        ' type="button"',
-        ' class="postMenuBtn"',
-        ' id="postMenuBtn_' + post.id + '"',
-        ' onclick="Heavenly.posts.render.togglePostMenu(\'' + post.id + '\', event)"',
-        '>',
-        '⋯',
-        '</button>',
+        '<button type="button" class="postMenuBtn" id="postMenuBtn_' + post.id + '" onclick="Heavenly.posts.render.togglePostMenu(\'' + post.id + '\', event)">⋯</button>',
         '<div class="postMenu" id="postMenu_' + post.id + '">',
         '<button type="button" onclick="event.stopPropagation(); Heavenly.posts.render.handleEditClick(\'' + post.id + '\', \'' + encodeText(post.text || "") + '\', \'' + feedType + '\', ' + ownerOption + ')">Bearbeiten</button>',
         '<button type="button" onclick="event.stopPropagation(); Heavenly.posts.render.handleDeleteClick(\'' + post.id + '\', \'' + feedType + '\', ' + ownerOption + ')">Löschen</button>',
@@ -169,9 +290,7 @@ Heavenly.posts = Heavenly.posts || {};
       '<button type="button" class="postActionBtn' + (isLiked ? ' active' : '') + '" onclick="Heavenly.posts.actions.toggleLike(\'' + post.id + '\', \'' + feedType + '\', { profileOwner: ' + ownerOption + ' })">',
       '❤ ' + getLikeCount(post),
       '</button>',
-      '<button type="button" class="postActionBtn staticBtn">',
-      '💬 ' + getCommentCount(post),
-      '</button>',
+      '<button type="button" class="postActionBtn staticBtn">💬 ' + getCommentCount(post) + '</button>',
       '</div>',
 
       '<div class="postCommentsWrap">',
@@ -181,53 +300,130 @@ Heavenly.posts = Heavenly.posts || {};
       }),
       '</div>',
 
+      '<div class="postCommentComposer" data-comment-input="' + commentInputId + '">',
+      '<div class="postCommentTools">',
+      '<button type="button" class="dmToolBtn commentImageBtn" data-comment-image-btn="' + commentInputId + '" title="Bild antworten">🖼</button>',
+      '<button type="button" class="dmToolBtn commentEmojiBtn" data-comment-emoji-btn="' + commentInputId + '" title="Emoji / Emotes">😊</button>',
+      '</div>',
+      '<input id="' + commentInputId + '_imageInput" type="file" accept="image/*" multiple hidden>',
+      '<div id="' + commentInputId + '_preview" class="commentComposerPreview" style="display:none;"></div>',
       '<div class="postCommentForm">',
       '<textarea id="' + commentInputId + '" class="postCommentInput" placeholder="Kommentieren..." rows="1"></textarea>',
-      '<button type="button" class="postCommentSend" onclick="Heavenly.posts.actions.submitComment(\'' + post.id + '\', \'' + commentInputId + '\', \'' + feedType + '\', { profileOwner: ' + ownerOption + ' })">',
-      'Senden',
-      '</button>',
+      '<button type="button" class="postCommentSend" onclick="Heavenly.posts.actions.submitComment(\'' + post.id + '\', \'' + commentInputId + '\', \'' + feedType + '\', { profileOwner: ' + ownerOption + ' })">Senden</button>',
+      '</div>',
       '</div>',
       '</article>'
     ].join("");
   }
 
-  function autoResizeCommentInputs(container) {
+  function bindCommentComposer(container) {
     var root = container || document;
 
-    root.querySelectorAll(".postCommentInput").forEach(function (textarea) {
-      function resize() {
-        textarea.style.height = "auto";
-        textarea.style.height = Math.min(textarea.scrollHeight, 150) + "px";
-      }
+    root.querySelectorAll(".postCommentComposer").forEach(function (composer) {
+      if (composer.dataset.boundComposer === "1") return;
+      composer.dataset.boundComposer = "1";
 
-      if (!textarea.dataset.boundResize) {
+      var inputId = composer.getAttribute("data-comment-input");
+      if (!inputId) return;
+
+      var textarea = composer.querySelector("#" + inputId);
+      var imageBtn = composer.querySelector('[data-comment-image-btn="' + inputId + '"]');
+      var emojiBtn = composer.querySelector('[data-comment-emoji-btn="' + inputId + '"]');
+      var imageInput = composer.querySelector("#" + inputId + "_imageInput");
+
+      if (textarea && !textarea.dataset.boundResize) {
         textarea.dataset.boundResize = "1";
 
-        textarea.addEventListener("input", resize);
+        textarea.addEventListener("input", function () {
+          autoResizeTextarea(textarea, 150);
+        });
 
         textarea.addEventListener("keydown", function (event) {
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
 
-            var sendBtn = textarea.parentNode
-              ? textarea.parentNode.querySelector(".postCommentSend")
-              : null;
-
+            var sendBtn = composer.querySelector(".postCommentSend");
             if (sendBtn) {
               sendBtn.click();
             }
           }
         });
+
+        textarea.addEventListener("paste", async function (event) {
+          var clipboardData = event.clipboardData;
+          if (!clipboardData || !clipboardData.items) return;
+
+          for (var i = 0; i < clipboardData.items.length; i++) {
+            var item = clipboardData.items[i];
+
+            if (!item || item.kind !== "file") {
+              continue;
+            }
+
+            if (!item.type || item.type.indexOf("image/") !== 0) {
+              continue;
+            }
+
+            var file = item.getAsFile();
+            if (!file) continue;
+
+            event.preventDefault();
+            await addFilesToCommentComposer(inputId, [file]);
+            focusCommentInput(inputId);
+            return;
+          }
+        });
+
+        autoResizeTextarea(textarea, 150);
       }
 
-      resize();
+      if (imageBtn) {
+        imageBtn.addEventListener("click", function () {
+          if (imageInput) {
+            imageInput.click();
+          }
+        });
+      }
+
+      if (emojiBtn) {
+        emojiBtn.addEventListener("click", function () {
+          if (typeof window.openEmojiPicker === "function") {
+            window.openEmojiPicker(inputId, {
+              mode: "comment",
+              onEmoteSelect: function (emote) {
+                if (!emote || !emote.src) return;
+
+                var state = ensureCommentComposerState(inputId);
+                state.images.push(emote.src);
+                renderCommentPreview(inputId);
+                focusCommentInput(inputId);
+              }
+            });
+          }
+        });
+      }
+
+      if (imageInput) {
+        imageInput.addEventListener("change", async function () {
+          var files = imageInput.files;
+
+          if (files && files.length) {
+            await addFilesToCommentComposer(inputId, files);
+          }
+
+          imageInput.value = "";
+          focusCommentInput(inputId);
+        });
+      }
+
+      renderCommentPreview(inputId);
     });
   }
 
   function bindPostImageViewer(container) {
     var root = container || document;
 
-    root.querySelectorAll(".postImage").forEach(function (img) {
+    root.querySelectorAll(".postImage, .postCommentImage").forEach(function (img) {
       if (img.dataset.viewerBound === "1") return;
       img.dataset.viewerBound = "1";
 
@@ -263,7 +459,7 @@ Heavenly.posts = Heavenly.posts || {};
       return renderPost(post, options);
     }).join("");
 
-    autoResizeCommentInputs(container);
+    bindCommentComposer(container);
     bindPostImageViewer(container);
     closePostMenus();
   }
@@ -330,9 +526,10 @@ Heavenly.posts = Heavenly.posts || {};
     renderFeed: renderFeed,
     handleEditClick: handleEditClick,
     handleDeleteClick: handleDeleteClick,
-    autoResizeCommentInputs: autoResizeCommentInputs,
     togglePostMenu: togglePostMenu,
-    closePostMenus: closePostMenus
+    closePostMenus: closePostMenus,
+    resetCommentComposer: resetCommentComposer,
+    ensureCommentComposerState: ensureCommentComposerState
   };
 
   document.addEventListener("click", function (event) {

@@ -91,6 +91,7 @@ Heavenly.posts = Heavenly.posts || {};
             authorDisplayName: comment.authorDisplayName || comment.authorUsername || "Unknown",
             authorAvatar: comment.authorAvatar || "",
             text: String(comment.text || ""),
+            images: ensureArray(comment.images),
             mentions: ensureArray(comment.mentions),
             likes: ensureArray(comment.likes),
             createdAt: comment.createdAt || Date.now()
@@ -199,12 +200,14 @@ Heavenly.posts = Heavenly.posts || {};
     });
   }
 
-  function addComment(postId, text) {
+  function addComment(postId, text, images) {
     var currentUser = getCurrentUser();
     if (!currentUser) return null;
 
     var content = String(text || "").trim();
-    if (!content) return null;
+    var media = ensureArray(images);
+
+    if (!content && !media.length) return null;
 
     var author = getAuthorData(currentUser);
 
@@ -217,12 +220,40 @@ Heavenly.posts = Heavenly.posts || {};
         authorDisplayName: author.displayName,
         authorAvatar: author.avatar,
         text: content,
+        images: media,
         mentions: extractMentions(content),
         likes: [],
         createdAt: Date.now()
       });
 
       post.comments = comments;
+      return post;
+    });
+  }
+
+  function editComment(postId, commentId, text) {
+    var content = String(text || "").trim();
+    if (!content) return null;
+
+    return updatePost(postId, function (post) {
+      post.comments = ensureArray(post.comments).map(function (comment) {
+        if (comment.id !== commentId) return comment;
+
+        comment.text = content;
+        comment.mentions = extractMentions(content);
+        return comment;
+      });
+
+      return post;
+    });
+  }
+
+  function deleteComment(postId, commentId) {
+    return updatePost(postId, function (post) {
+      post.comments = ensureArray(post.comments).filter(function (comment) {
+        return comment.id !== commentId;
+      });
+
       return post;
     });
   }
@@ -281,6 +312,8 @@ Heavenly.posts = Heavenly.posts || {};
     deletePost: deletePost,
     toggleLike: toggleLike,
     addComment: addComment,
+    editComment: editComment,
+    deleteComment: deleteComment,
     toggleCommentLike: toggleCommentLike,
     getFeedPosts: getFeedPosts,
     extractMentions: extractMentions

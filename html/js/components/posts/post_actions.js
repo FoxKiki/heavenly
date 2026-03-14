@@ -29,20 +29,54 @@ Heavenly.posts = Heavenly.posts || {};
     rerenderFeed(feedType, options);
   }
 
-  function submitComment(postId, inputId, feedType, options) {
+    async function submitComment(postId, inputId, feedType, options) {
     var input = document.getElementById(inputId);
     if (!input) return;
 
-    var text = String(input.value || "").trim();
-    if (!text) return;
+    if (feedType === "profile") {
+      var profileOwner = options && options.profileOwner ? options.profileOwner : null;
 
-    var comment = Heavenly.posts.store.addComment(postId, text);
+      if (profileOwner && typeof window.canCurrentUserViewProfilePosts === "function") {
+        var allowed = await window.canCurrentUserViewProfilePosts(profileOwner);
+
+        if (!allowed) {
+          if (typeof window.setFeedback === "function") {
+            window.setFeedback("Nur Freunde können auf diesem Profil kommentieren.", false);
+          }
+          return;
+        }
+      }
+    }
+
+    var text = String(input.value || "").trim();
+    var images = [];
+
+    if (
+      Heavenly.posts &&
+      Heavenly.posts.render &&
+      typeof Heavenly.posts.render.ensureCommentComposerState === "function"
+    ) {
+      images = Heavenly.posts.render.ensureCommentComposerState(inputId).images.slice();
+    }
+
+    var comment = Heavenly.posts.store.addComment(postId, text, images);
     if (!comment) return;
 
-    input.value = "";
-    input.style.height = "auto";
+    if (
+      Heavenly.posts &&
+      Heavenly.posts.render &&
+      typeof Heavenly.posts.render.resetCommentComposer === "function"
+    ) {
+      Heavenly.posts.render.resetCommentComposer(inputId);
+    } else {
+      input.value = "";
+      input.style.height = "auto";
+    }
+
     rerenderFeed(feedType, options);
   }
+
+
 
   function editPost(postId, nextText, feedType, options) {
     if (!Heavenly.posts || !Heavenly.posts.store) return;

@@ -21,7 +21,7 @@ Heavenly.screens = Heavenly.screens || {};
   }
 
   function isOwnProfile() {
-    return getViewedUser() === getCurrentUser();
+    return normalizeName(getViewedUser()) === normalizeName(getCurrentUser());
   }
 
   function getInitials(name) {
@@ -283,6 +283,43 @@ Heavenly.screens = Heavenly.screens || {};
     }
   }
 
+  async function getFriendListOf(user) {
+    if (!user || !Heavenly.api || !Heavenly.api.getFriends) return [];
+
+    try {
+      var result = await Heavenly.api.getFriends(user);
+      if (result && result.ok && Array.isArray(result.data)) {
+        return result.data;
+      }
+    } catch (error) {
+      console.warn("Friend visibility check failed", error);
+    }
+
+    return [];
+  }
+
+  async function canCurrentUserViewProfilePosts(profileOwner) {
+    var currentUser = getCurrentUser();
+    if (!profileOwner) return false;
+    if (!currentUser) return false;
+    if (normalizeName(currentUser) === normalizeName(profileOwner)) return true;
+
+    var settings = await getUserSettings(profileOwner);
+    var visibility = settings && settings.profileVisibility
+      ? settings.profileVisibility
+      : "public";
+
+    if (visibility !== "friends") {
+      return true;
+    }
+
+    var friends = await getFriendListOf(profileOwner);
+
+    return friends.some(function (name) {
+      return normalizeName(name) === normalizeName(currentUser);
+    });
+  }
+
   async function enrichPostsWithAvatars(posts) {
     posts = Array.isArray(posts) ? posts : [];
 
@@ -344,6 +381,29 @@ Heavenly.screens = Heavenly.screens || {};
     if (!viewedUser) return;
 
     var profileOwner = (options && options.profileOwner) || viewedUser;
+    var canView = await canCurrentUserViewProfilePosts(profileOwner);
+
+    var container = getEl("profileFeedPosts");
+    var creator = getEl("profilePostCreator");
+    var heading = getEl("profileFeedHeading");
+
+    if (!canView) {
+      if (heading) {
+        heading.style.display = "none";
+        heading.innerText = "";
+      }
+
+      if (container) {
+        container.innerHTML = '<div class="profilePrivateBanner">🔒 Nur für Freunde sichtbar</div><div class="postEmptyState">Dieses Profil ist privat. Nur Freunde können Beiträge sehen und kommentieren.</div>';
+      }
+
+      if (creator) {
+        creator.style.display = isOwnProfile() ? "flex" : "none";
+      }
+
+      return;
+    }
+
     var posts = Heavenly.posts.store.getFeedPosts("profile", {
       profileOwner: profileOwner
     });
@@ -446,6 +506,13 @@ Heavenly.screens = Heavenly.screens || {};
     var heading = getEl("profileFeedHeading");
     if (!user || !heading) return;
 
+    var canView = await canCurrentUserViewProfilePosts(user);
+    if (!canView) {
+      heading.style.display = "none";
+      heading.innerText = "";
+      return;
+    }
+
     var settings = await getUserSettings(user);
     var customTitle = settings && settings.profileFeedTitle
       ? String(settings.profileFeedTitle).trim()
@@ -475,6 +542,7 @@ Heavenly.screens = Heavenly.screens || {};
     var job = getEl("infoJob");
     var about = getEl("infoAbout");
     var profileFeedTitle = getEl("infoProfileFeedTitle");
+    var profileVisibility = getEl("infoProfileVisibility");
 
     if (relationshipStatus) relationshipStatus.value = relationship.status || "";
     if (relationshipPartner) relationshipPartner.value = relationship.partner || "";
@@ -482,6 +550,7 @@ Heavenly.screens = Heavenly.screens || {};
     if (job) job.value = info.job || "";
     if (about) about.value = info.about || "";
     if (profileFeedTitle) profileFeedTitle.value = settings.profileFeedTitle || "";
+    if (profileVisibility) profileVisibility.value = settings.profileVisibility || "public";
 
     if (popup) {
       popup.classList.add("active");
@@ -512,6 +581,9 @@ Heavenly.screens = Heavenly.screens || {};
     settings.profileFeedTitle = getEl("infoProfileFeedTitle")
       ? getEl("infoProfileFeedTitle").value.trim()
       : "";
+    settings.profileVisibility = getEl("infoProfileVisibility")
+      ? getEl("infoProfileVisibility").value
+      : "public";
 
     Heavenly.storage.setSettings(user, settings);
 
@@ -550,26 +622,25 @@ Heavenly.screens = Heavenly.screens || {};
       homeScreen.style.backgroundRepeat = "";
     }
 
-        var profileScreen = getEl("profileScreen");
+    var profileScreen = getEl("profileScreen");
     if (profileScreen) {
       profileScreen.style.backgroundColor = "transparent";
-      profileScreen.style.backgroundImage = "";
-      profileScreen.style.backgroundSize = "";
-      profileScreen.style.backgroundPosition = "";
-      profileScreen.style.backgroundRepeat = "";
+      profileScreen.style.backgroundImage = profileBg ? 'url("' + profileBg + '")' : "";
+      profileScreen.style.backgroundSize = profileBg ? "cover" : "";
+      profileScreen.style.backgroundPosition = profileBg ? "center" : "";
+      profileScreen.style.backgroundRepeat = profileBg ? "no-repeat" : "";
       profileScreen.style.color = profileTextColor;
     }
 
     var profileContent = document.querySelector(".profileContent");
     if (profileContent) {
-      profileContent.style.backgroundImage = profileBg ? 'url("' + profileBg + '")' : "";
-      profileContent.style.backgroundSize = profileBg ? "cover" : "";
-      profileContent.style.backgroundPosition = profileBg ? "center" : "";
-      profileContent.style.backgroundRepeat = profileBg ? "no-repeat" : "";
-      profileContent.style.borderRadius = "18px";
-      profileContent.style.padding = profileBg ? "12px" : "";
+      profileContent.style.backgroundImage = "";
+      profileContent.style.backgroundSize = "";
+      profileContent.style.backgroundPosition = "";
+      profileContent.style.backgroundRepeat = "";
+      profileContent.style.borderRadius = "";
+      profileContent.style.padding = "";
     }
-
 
     document.querySelectorAll(".profileInfoBox, .profileMainBox, .profileStatus").forEach(function (element) {
       element.style.background = profileBoxBg;
@@ -1196,6 +1267,7 @@ Heavenly.screens = Heavenly.screens || {};
   window.openRelationshipPartnerProfile = openRelationshipPartnerProfile;
   window.openInfoBoxPopup = openInfoBoxPopup;
   window.saveInfoBoxSettings = saveInfoBoxSettings;
+  window.canCurrentUserViewProfilePosts = canCurrentUserViewProfilePosts;
 
   window.openProfile = async function () {
     var user = getCurrentUser();

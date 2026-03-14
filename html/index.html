@@ -76,22 +76,22 @@
       </div>
     </div>
 
-     <div class="homeContent">
+    <div class="homeContent">
       <div class="feedBox">
-       <div class="postCreator">
-        <input
-        id="homePostInput"
-        type="text"
-        placeholder="Was möchtest du posten?"
-        />
+        <div class="postCreator">
+          <input
+            id="homePostInput"
+            type="text"
+            placeholder="Was möchtest du posten?"
+          />
 
-      <button
-        type="button"
-        onclick="Heavenly.posts.create.submitPost({ inputId: 'homePostInput', feedType: 'home' })"
-      >
-        Posten
-      </button>
-    </div>
+          <button
+            type="button"
+            onclick="Heavenly.posts.create.submitPost({ inputId: 'homePostInput', feedType: 'home' })"
+          >
+            Posten
+          </button>
+        </div>
 
         <div id="homeFeedPosts" class="postFeed"></div>
       </div>
@@ -259,7 +259,7 @@
 
               <div id="profileMenu" class="profileMenu" onclick="event.stopPropagation()">
                 <button type="button" onclick="event.stopPropagation(); openProfileSection('homeProfile')">
-                  Home &amp; Profile
+                  Profile
                 </button>
                 <button type="button" onclick="event.stopPropagation(); openProfileSection('avatar')">
                   Profilbild ändern
@@ -286,6 +286,7 @@
 
         <div class="profileMainBox">
           <div id="profileFeedHeading" class="profileFeedHeading" style="display:none;"></div>
+          <div id="profilePrivacyBanner" class="profilePrivateBanner" style="display:none;"></div>
 
           <div class="postCreator" id="profilePostCreator">
             <input
@@ -458,7 +459,7 @@
 
   <div id="homeProfilePopup" class="popup">
     <div class="popup-box homeProfilePopupBox">
-      <h2>Home &amp; Profile</h2>
+      <h2>Profile</h2>
 
       <label class="hpField">
         <span>Box-Farbe</span>
@@ -487,13 +488,10 @@
         </select>
       </label>
 
-      <label class="hpField">
-        <span>Home Hintergrundbild (URL)</span>
-        <input id="hpHomeBg" type="text" placeholder="Standard bleibt aktiv" disabled />
-      </label>
+      <input id="hpHomeBg" type="hidden" value="" />
 
       <label class="hpField">
-        <span>Profil Hintergrundbild (deaktiviert)</span>
+        <span>Profil Hintergrundbild</span>
         <input id="hpProfileBg" type="text" placeholder="https://..." />
       </label>
 
@@ -543,6 +541,14 @@
           placeholder="Ein kleiner Text über dich"
           maxlength="160"
         />
+      </label>
+
+      <label class="hpField">
+        <span>Profil-Sichtbarkeit</span>
+        <select id="infoProfileVisibility">
+          <option value="public">Öffentlich</option>
+          <option value="friends">Nur Freunde</option>
+        </select>
       </label>
 
       <label class="hpField">
