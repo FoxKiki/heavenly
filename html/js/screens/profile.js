@@ -937,6 +937,53 @@ Heavenly.screens = Heavenly.screens || {};
     }
   }
 
+  <div id="homeProfilePopup" class="popup">
+  <div class="popup-box homeProfilePopupBox">
+    <h2>Profile</h2>
+
+    <label class="hpField">
+      <span>Box-Farbe</span>
+      <input id="hpBoxColor" type="color" value="#8b5cf6" />
+    </label>
+
+    <label class="hpField">
+      <span>Box-Innenfarbe</span>
+      <input id="hpPanelColor" type="color" value="#4b0010" />
+    </label>
+
+    <label class="hpField">
+      <span>Text-Farbe</span>
+      <input id="hpTextColor" type="color" value="#ffffff" />
+    </label>
+
+    <label class="hpField">
+      <span>Schriftart</span>
+      <select id="hpFontFamily">
+        <option value="Arial, sans-serif">Arial</option>
+        <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+        <option value="'Segoe UI', sans-serif">Segoe UI</option>
+        <option value="'Verdana', sans-serif">Verdana</option>
+        <option value="'Georgia', serif">Georgia</option>
+        <option value="'Palatino Linotype','Book Antiqua',Palatino,serif">Palatino</option>
+      </select>
+    </label>
+
+    <input id="hpHomeBg" type="hidden" value="" />
+
+    <label class="hpField">
+      <span>Profil Hintergrundbild</span>
+      <input id="hpProfileBg" type="text" placeholder="https://..." />
+    </label>
+
+    <div class="hpActions">
+      <button type="button" onclick="saveHomeProfileSettings()">Speichern</button>
+      <button type="button" onclick="resetHomeProfileSettings()">Zurücksetzen</button>
+      <button class="close" type="button" onclick="closeHomeProfilePopup()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+
   function closeProfileMenu() {
     var menu = getEl("profileMenu");
     if (menu && Heavenly.overlay && Heavenly.overlay.close) {

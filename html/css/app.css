@@ -1115,6 +1115,59 @@ body{
   border:1px solid rgba(255,255,255,0.08) !important;
 }
 
+.homeProfilePopupBox{
+  width:min(520px, 92vw) !important;
+  max-height:86vh !important;
+  overflow-y:auto !important;
+}
+
+.hpField{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-bottom:14px;
+}
+
+.hpField span{
+  color:rgb(52,197,241);
+  font-size:14px;
+  font-weight:600;
+}
+
+.homeProfilePopupBox input,
+.homeProfilePopupBox select{
+  display:block !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  margin:0 !important;
+  padding:13px 14px !important;
+  border:none !important;
+  outline:none !important;
+  border-radius:12px !important;
+  background:rgba(255,255,255,0.10) !important;
+  color:white !important;
+  font-size:15px !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12) !important;
+}
+
+.homeProfilePopupBox input[type="color"]{
+  height:48px !important;
+  padding:6px !important;
+  cursor:pointer;
+}
+
+.hpActions{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:18px;
+}
+
+.hpActions button{
+  width:100% !important;
+}
+
+
 .gearWrap{
   position:relative;
   z-index:50;
