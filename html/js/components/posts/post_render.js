@@ -3,6 +3,7 @@ Heavenly.posts = Heavenly.posts || {};
 
 (function () {
   var commentComposerState = {};
+  var delegatedRoots = {};
 
   function getCurrentUser() {
     return Heavenly && Heavenly.state ? Heavenly.state.currentUser : null;
@@ -109,6 +110,7 @@ Heavenly.posts = Heavenly.posts || {};
       img.className = "commentComposerPreviewImage";
       img.src = src;
       img.alt = "Kommentar Bild";
+      img.loading = "lazy";
 
       var removeBtn = document.createElement("button");
       removeBtn.className = "commentComposerPreviewRemove";
@@ -198,7 +200,7 @@ Heavenly.posts = Heavenly.posts || {};
     return [
       '<div class="postImages">',
       images.map(function (src) {
-        return '<img class="postImage" src="' + escapeHtml(src) + '" alt="Post Bild">';
+        return '<img class="postImage" src="' + escapeHtml(src) + '" alt="Post Bild" loading="lazy">';
       }).join(""),
       '</div>'
     ].join("");
@@ -206,7 +208,7 @@ Heavenly.posts = Heavenly.posts || {};
 
   function getAvatarMarkup(post) {
     if (post.authorAvatar) {
-      return '<img class="postAvatar" src="' + escapeHtml(post.authorAvatar) + '" alt="">';
+      return '<img class="postAvatar" src="' + escapeHtml(post.authorAvatar) + '" alt="" loading="lazy">';
     }
 
     return [
@@ -281,7 +283,7 @@ Heavenly.posts = Heavenly.posts || {};
       : "null";
 
     return [
-      '<article class="postCard">',
+      '<article class="postCard" data-post-id="' + escapeHtml(post.id) + '">',
       renderHeader(post, feedType, ownerOption),
       '<div class="postText">' + formatText(post.text) + '</div>',
       renderImages(post.images),
@@ -377,7 +379,8 @@ Heavenly.posts = Heavenly.posts || {};
         autoResizeTextarea(textarea, 150);
       }
 
-      if (imageBtn) {
+      if (imageBtn && !imageBtn.dataset.boundClick) {
+        imageBtn.dataset.boundClick = "1";
         imageBtn.addEventListener("click", function () {
           if (imageInput) {
             imageInput.click();
@@ -385,7 +388,8 @@ Heavenly.posts = Heavenly.posts || {};
         });
       }
 
-      if (emojiBtn) {
+      if (emojiBtn && !emojiBtn.dataset.boundClick) {
+        emojiBtn.dataset.boundClick = "1";
         emojiBtn.addEventListener("click", function () {
           if (typeof window.openEmojiPicker === "function") {
             window.openEmojiPicker(inputId, {
@@ -403,7 +407,8 @@ Heavenly.posts = Heavenly.posts || {};
         });
       }
 
-      if (imageInput) {
+      if (imageInput && !imageInput.dataset.boundChange) {
+        imageInput.dataset.boundChange = "1";
         imageInput.addEventListener("change", async function () {
           var files = imageInput.files;
 
@@ -422,25 +427,27 @@ Heavenly.posts = Heavenly.posts || {};
 
   function bindPostImageViewer(container) {
     var root = container || document;
+    var rootKey = root.id || "document";
 
-    root.querySelectorAll(".postImage, .postCommentImage").forEach(function (img) {
-      if (img.dataset.viewerBound === "1") return;
-      img.dataset.viewerBound = "1";
+    if (delegatedRoots[rootKey]) return;
+    delegatedRoots[rootKey] = true;
 
-      img.addEventListener("click", function () {
-        var viewer = document.getElementById("imageViewer");
-        var viewerImg = document.getElementById("imageViewerImg");
+    root.addEventListener("click", function (event) {
+      var img = event.target.closest(".postImage, .postCommentImage");
+      if (!img) return;
 
-        if (!viewer || !viewerImg) return;
+      var viewer = document.getElementById("imageViewer");
+      var viewerImg = document.getElementById("imageViewerImg");
 
-        viewerImg.src = img.src;
+      if (!viewer || !viewerImg) return;
 
-        if (window.Heavenly && Heavenly.overlay && Heavenly.overlay.open) {
-          Heavenly.overlay.open(viewer, "open");
-        } else {
-          viewer.classList.add("open");
-        }
-      });
+      viewerImg.src = img.src;
+
+      if (window.Heavenly && Heavenly.overlay && Heavenly.overlay.open) {
+        Heavenly.overlay.open(viewer, "open");
+      } else {
+        viewer.classList.add("open");
+      }
     });
   }
 

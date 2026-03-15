@@ -10,15 +10,39 @@ window.Heavenly = window.Heavenly || {};
     onEmoteSelect: null
   };
 
+  var pickerRefs = {
+    root: null,
+    tabs: null,
+    body: null,
+    closeBtn: null
+  };
+
   function getEl(id) {
     return document.getElementById(id);
   }
 
-  function closeMediaPicker() {
-    var picker = getEl("heavenlyMediaPicker");
-    if (picker) {
-      picker.remove();
+  function getPicker() {
+    if (pickerRefs.root && document.body.contains(pickerRefs.root)) {
+      return pickerRefs.root;
     }
+
+    pickerRefs.root = null;
+    pickerRefs.tabs = null;
+    pickerRefs.body = null;
+    pickerRefs.closeBtn = null;
+    return null;
+  }
+
+  function hidePicker() {
+    var picker = getPicker();
+    if (!picker) return;
+
+    picker.style.display = "none";
+    picker.dataset.activeTab = "";
+  }
+
+  function closeMediaPicker() {
+    hidePicker();
   }
 
   function focusInputById(inputId) {
@@ -70,17 +94,12 @@ window.Heavenly = window.Heavenly || {};
     closeMediaPicker();
   }
 
-  function createTabButton(label, isActive, onClick) {
+  function createTabButton(label, tabName, isActive) {
     var btn = document.createElement("button");
     btn.className = "heavenlyMediaTab" + (isActive ? " active" : "");
     btn.type = "button";
     btn.innerText = label;
-
-    btn.onclick = function (event) {
-      event.stopPropagation();
-      onClick();
-    };
-
+    btn.dataset.mediaTab = tabName;
     return btn;
   }
 
@@ -90,6 +109,7 @@ window.Heavenly = window.Heavenly || {};
     preview.src = src;
     preview.alt = altText || "Media";
     preview.loading = "lazy";
+    preview.decoding = "async";
 
     preview.onerror = function () {
       preview.style.display = "none";
@@ -121,14 +141,24 @@ window.Heavenly = window.Heavenly || {};
       return;
     }
 
-    insertIntoInput((pickerContext && pickerContext.inputId) || "dmMessageInput", " " + (emote.label || emote.id || "") + " ");
+    insertIntoInput(
+      (pickerContext && pickerContext.inputId) || "dmMessageInput",
+      " " + (emote.label || emote.id || "") + " "
+    );
     closeMediaPicker();
   }
 
-  function renderEmojiTab(body) {
+  function clearBody() {
+    if (!pickerRefs.body) return;
+    pickerRefs.body.innerHTML = "";
+  }
+
+  function renderEmojiTab() {
+    var body = pickerRefs.body;
     var emojis = (Heavenly.media && Heavenly.media.emojis) || [];
 
-    body.innerHTML = "";
+    if (!body) return;
+    clearBody();
 
     if (!emojis.length) {
       var empty = document.createElement("div");
@@ -138,25 +168,26 @@ window.Heavenly = window.Heavenly || {};
       return;
     }
 
+    var fragment = document.createDocumentFragment();
+
     emojis.forEach(function (emoji) {
       var btn = document.createElement("button");
       btn.className = "heavenlyEmojiBtn";
       btn.type = "button";
       btn.innerText = emoji;
-
-      btn.onclick = function (event) {
-        event.stopPropagation();
-        handleEmojiSelect(emoji);
-      };
-
-      body.appendChild(btn);
+      btn.dataset.emojiValue = emoji;
+      fragment.appendChild(btn);
     });
+
+    body.appendChild(fragment);
   }
 
-  function renderEmoteTab(body) {
+  function renderEmoteTab() {
+    var body = pickerRefs.body;
     var emotes = (Heavenly.media && Heavenly.media.emotes) || [];
 
-    body.innerHTML = "";
+    if (!body) return;
+    clearBody();
 
     if (!emotes.length) {
       var empty = document.createElement("div");
@@ -166,11 +197,14 @@ window.Heavenly = window.Heavenly || {};
       return;
     }
 
-    emotes.forEach(function (emote) {
+    var fragment = document.createDocumentFragment();
+
+    emotes.forEach(function (emote, index) {
       var btn = document.createElement("button");
       btn.className = "heavenlyAssetBtn";
       btn.type = "button";
       btn.title = emote.label || emote.id || "Emote";
+      btn.dataset.emoteIndex = String(index);
 
       var preview = createAssetPreview(
         emote.src,
@@ -183,26 +217,48 @@ window.Heavenly = window.Heavenly || {};
 
       btn.appendChild(preview);
       btn.appendChild(label);
-
-      btn.onclick = function (event) {
-        event.stopPropagation();
-        handleEmoteSelect(emote);
-      };
-
-      body.appendChild(btn);
+      fragment.appendChild(btn);
     });
+
+    body.appendChild(fragment);
   }
 
-  function buildPicker(initialTab) {
-    closeMediaPicker();
+  function renderTabs(tabName) {
+    if (!pickerRefs.tabs || !pickerRefs.closeBtn) return;
 
-    var picker = document.createElement("div");
+    pickerRefs.tabs.innerHTML = "";
+    pickerRefs.tabs.appendChild(createTabButton("😊 Emoji", "emoji", tabName === "emoji"));
+    pickerRefs.tabs.appendChild(createTabButton("🦊 Emotes", "emote", tabName === "emote"));
+    pickerRefs.tabs.appendChild(pickerRefs.closeBtn);
+  }
+
+  function renderTab(tabName) {
+    var picker = getPicker();
+    if (!picker) return;
+
+    renderTabs(tabName);
+
+    picker.dataset.activeTab = tabName;
+    lastMediaTab = tabName;
+
+    if (tabName === "emoji") {
+      renderEmojiTab();
+      return;
+    }
+
+    renderEmoteTab();
+  }
+
+  function ensurePickerBuilt() {
+    var picker = getPicker();
+    if (picker) {
+      return picker;
+    }
+
+    picker = document.createElement("div");
     picker.id = "heavenlyMediaPicker";
     picker.className = "heavenlyMediaPicker";
-
-    picker.addEventListener("click", function (event) {
-      event.stopPropagation();
-    });
+    picker.style.display = "none";
 
     var tabs = document.createElement("div");
     tabs.className = "heavenlyMediaTabs";
@@ -214,50 +270,60 @@ window.Heavenly = window.Heavenly || {};
     closeBtn.className = "heavenlyMediaPickerClose";
     closeBtn.type = "button";
     closeBtn.innerText = "✕";
-    closeBtn.onclick = function (event) {
+
+    picker.addEventListener("click", function (event) {
+      event.stopPropagation();
+    });
+
+    closeBtn.addEventListener("click", function (event) {
       event.stopPropagation();
       closeMediaPicker();
-    };
+    });
 
-    function renderTab(tabName) {
-      tabs.innerHTML = "";
+    tabs.addEventListener("click", function (event) {
+      var btn = event.target.closest("[data-media-tab]");
+      if (!btn) return;
 
-      tabs.appendChild(
-        createTabButton("😊 Emoji", tabName === "emoji", function () {
-          renderTab("emoji");
-        })
-      );
+      event.stopPropagation();
+      renderTab(btn.dataset.mediaTab);
+    });
 
-      tabs.appendChild(
-        createTabButton("🦊 Emotes", tabName === "emote", function () {
-          renderTab("emote");
-        })
-      );
-
-      tabs.appendChild(closeBtn);
-
-      picker.dataset.activeTab = tabName;
-      lastMediaTab = tabName;
-
-      if (tabName === "emoji") {
-        renderEmojiTab(body);
+    body.addEventListener("click", function (event) {
+      var emojiBtn = event.target.closest("[data-emoji-value]");
+      if (emojiBtn) {
+        event.stopPropagation();
+        handleEmojiSelect(emojiBtn.dataset.emojiValue);
         return;
       }
 
-      if (tabName === "emote") {
-        renderEmoteTab(body);
+      var emoteBtn = event.target.closest("[data-emote-index]");
+      if (emoteBtn) {
+        event.stopPropagation();
+
+        var emotes = (Heavenly.media && Heavenly.media.emotes) || [];
+        var index = Number(emoteBtn.dataset.emoteIndex);
+        var emote = emotes[index];
+
+        if (emote) {
+          handleEmoteSelect(emote);
+        }
       }
-    }
+    });
 
     picker.appendChild(tabs);
     picker.appendChild(body);
-
     document.body.appendChild(picker);
-    renderTab(initialTab || lastMediaTab || "emoji");
+
+    pickerRefs.root = picker;
+    pickerRefs.tabs = tabs;
+    pickerRefs.body = body;
+    pickerRefs.closeBtn = closeBtn;
+
+    return picker;
   }
 
   function openPicker(tabName, context) {
-    var existing = getEl("heavenlyMediaPicker");
+    var picker = ensurePickerBuilt();
 
     pickerContext = Object.assign({
       mode: "dm",
@@ -268,23 +334,20 @@ window.Heavenly = window.Heavenly || {};
 
     ignoreNextOutsideClick = true;
 
-    if (existing) {
-      var activeTab = existing.dataset.activeTab || "";
+    var activeTab = picker.dataset.activeTab || "";
 
-      if (activeTab === tabName) {
-        closeMediaPicker();
-        return;
-      }
-
-      existing.remove();
+    if (picker.style.display !== "none" && activeTab === tabName) {
+      closeMediaPicker();
+      return;
     }
 
-    buildPicker(tabName);
+    picker.style.display = "flex";
+    renderTab(tabName || lastMediaTab || "emoji");
   }
 
   document.addEventListener("click", function (event) {
-    var picker = getEl("heavenlyMediaPicker");
-    if (!picker) return;
+    var picker = getPicker();
+    if (!picker || picker.style.display === "none") return;
 
     if (ignoreNextOutsideClick) {
       ignoreNextOutsideClick = false;

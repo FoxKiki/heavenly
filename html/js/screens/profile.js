@@ -1,5 +1,10 @@
 window.Heavenly = window.Heavenly || {};
 Heavenly.screens = Heavenly.screens || {};
+Heavenly.cache = Heavenly.cache || {};
+Heavenly.cache.avatars = Heavenly.cache.avatars || {};
+Heavenly.cache.profiles = Heavenly.cache.profiles || {};
+Heavenly.cache.themes = Heavenly.cache.themes || {};
+Heavenly.cache.friends = Heavenly.cache.friends || {};
 
 (function () {
   var THEME_KEY_PREFIX = "heavenly_theme_";
@@ -20,6 +25,10 @@ Heavenly.screens = Heavenly.screens || {};
     return getCurrentUser();
   }
 
+  function normalizeName(name) {
+    return String(name || "").trim().toLowerCase();
+  }
+
   function isOwnProfile() {
     return normalizeName(getViewedUser()) === normalizeName(getCurrentUser());
   }
@@ -30,10 +39,6 @@ Heavenly.screens = Heavenly.screens || {};
     }
 
     return String(name || "?").charAt(0).toUpperCase();
-  }
-
-  function normalizeName(name) {
-    return String(name || "").trim().toLowerCase();
   }
 
   function getBlockedUsers(user) {
@@ -114,6 +119,22 @@ Heavenly.screens = Heavenly.screens || {};
     return THEME_KEY_PREFIX + String(user || "");
   }
 
+  function getAvatarCacheKey(user) {
+    return normalizeName(user);
+  }
+
+  function getProfileCacheKey(user) {
+    return normalizeName(user);
+  }
+
+  function getFriendsCacheKey(user) {
+    return normalizeName(user);
+  }
+
+  function getThemeMemoryCacheKey(user) {
+    return String(user || "");
+  }
+
   function loadThemeFallback(user) {
     try {
       var raw = localStorage.getItem(getThemeCacheKey(user));
@@ -130,16 +151,26 @@ Heavenly.screens = Heavenly.screens || {};
   }
 
   async function getProfileData(user) {
+    var key = getProfileCacheKey(user);
+    if (!key) return null;
+
+    if (Heavenly.cache.profiles[key] !== undefined) {
+      return Heavenly.cache.profiles[key];
+    }
+
     if (!user || !Heavenly.api || !Heavenly.api.getProfile) {
+      Heavenly.cache.profiles[key] = null;
       return null;
     }
 
-    var result = await Heavenly.api.getProfile(user);
-    if (!result || !result.ok || !result.data) {
+    try {
+      var result = await Heavenly.api.getProfile(user);
+      Heavenly.cache.profiles[key] = result && result.ok && result.data ? result.data : null;
+      return Heavenly.cache.profiles[key];
+    } catch (error) {
+      Heavenly.cache.profiles[key] = null;
       return null;
     }
-
-    return result.data;
   }
 
   async function getUserSettings(user) {
@@ -154,9 +185,15 @@ Heavenly.screens = Heavenly.screens || {};
   }
 
   async function getThemeSettings(user) {
+    var key = getThemeMemoryCacheKey(user);
     var fallbackTheme = loadThemeFallback(user);
 
+    if (Heavenly.cache.themes[key] !== undefined) {
+      return Object.assign({}, fallbackTheme, Heavenly.cache.themes[key] || {});
+    }
+
     if (!user || !Heavenly.api || !Heavenly.api.getTheme) {
+      Heavenly.cache.themes[key] = fallbackTheme;
       return fallbackTheme;
     }
 
@@ -164,12 +201,14 @@ Heavenly.screens = Heavenly.screens || {};
       var result = await Heavenly.api.getTheme(user);
       if (result && result.ok && result.data) {
         saveThemeFallback(user, result.data || {});
+        Heavenly.cache.themes[key] = result.data || {};
         return Object.assign({}, fallbackTheme, result.data || {});
       }
     } catch (error) {
       console.warn("getTheme fallback used", error);
     }
 
+    Heavenly.cache.themes[key] = fallbackTheme;
     return fallbackTheme;
   }
 
@@ -177,6 +216,7 @@ Heavenly.screens = Heavenly.screens || {};
     if (!user) return;
 
     saveThemeFallback(user, theme || {});
+    Heavenly.cache.themes[getThemeMemoryCacheKey(user)] = theme || {};
 
     if (!Heavenly.api || !Heavenly.api.saveTheme) return;
 
@@ -188,19 +228,34 @@ Heavenly.screens = Heavenly.screens || {};
   }
 
   async function getAvatarData(user) {
+    var key = getAvatarCacheKey(user);
+    if (!key) return null;
+
+    if (Heavenly.cache.avatars[key] !== undefined) {
+      return Heavenly.cache.avatars[key] || null;
+    }
+
     if (!user || !Heavenly.api || !Heavenly.api.getAvatar) {
+      Heavenly.cache.avatars[key] = "";
       return null;
     }
 
     try {
       var result = await Heavenly.api.getAvatar(user);
-      return result && result.ok ? (result.data || null) : null;
+      Heavenly.cache.avatars[key] = result && result.ok ? (result.data || "") : "";
+      return Heavenly.cache.avatars[key] || null;
     } catch (error) {
+      Heavenly.cache.avatars[key] = "";
       return null;
     }
   }
 
   async function getCoverData(user) {
+    var profile = await getProfileData(user);
+    if (profile && profile.coverData) {
+      return profile.coverData;
+    }
+
     if (!user || !Heavenly.api || !Heavenly.api.getCover) {
       return null;
     }
@@ -215,6 +270,7 @@ Heavenly.screens = Heavenly.screens || {};
 
   async function saveAvatarData(user, dataUrl) {
     if (!user || !Heavenly.api || !Heavenly.api.setAvatar) return;
+    Heavenly.cache.avatars[getAvatarCacheKey(user)] = dataUrl || "";
     await Heavenly.api.setAvatar(user, dataUrl);
   }
 
@@ -225,6 +281,10 @@ Heavenly.screens = Heavenly.screens || {};
 
   async function saveStatusText(user, text) {
     if (!user || !Heavenly.api || !Heavenly.api.saveStatus) return;
+    var key = getProfileCacheKey(user);
+    if (Heavenly.cache.profiles[key] && Heavenly.cache.profiles[key].settings) {
+      Heavenly.cache.profiles[key].settings.status = text || "";
+    }
     await Heavenly.api.saveStatus(user, text || "");
   }
 
@@ -284,17 +344,29 @@ Heavenly.screens = Heavenly.screens || {};
   }
 
   async function getFriendListOf(user) {
-    if (!user || !Heavenly.api || !Heavenly.api.getFriends) return [];
+    var key = getFriendsCacheKey(user);
+    if (!key) return [];
+
+    if (Heavenly.cache.friends[key] !== undefined) {
+      return Heavenly.cache.friends[key];
+    }
+
+    if (!user || !Heavenly.api || !Heavenly.api.getFriends) {
+      Heavenly.cache.friends[key] = [];
+      return [];
+    }
 
     try {
       var result = await Heavenly.api.getFriends(user);
       if (result && result.ok && Array.isArray(result.data)) {
+        Heavenly.cache.friends[key] = result.data;
         return result.data;
       }
     } catch (error) {
       console.warn("Friend visibility check failed", error);
     }
 
+    Heavenly.cache.friends[key] = [];
     return [];
   }
 
@@ -320,58 +392,62 @@ Heavenly.screens = Heavenly.screens || {};
     });
   }
 
+  async function preloadAvatars(usernames) {
+    var unique = {};
+    var tasks = [];
+
+    (usernames || []).forEach(function (name) {
+      var key = getAvatarCacheKey(name);
+      if (!key || unique[key]) return;
+      unique[key] = true;
+
+      if (Heavenly.cache.avatars[key] === undefined) {
+        tasks.push(getAvatarData(name));
+      }
+    });
+
+    if (tasks.length) {
+      await Promise.all(tasks);
+    }
+  }
+
   async function enrichPostsWithAvatars(posts) {
     posts = Array.isArray(posts) ? posts : [];
 
-    if (!Heavenly.api || !Heavenly.api.getAvatar) {
-      return posts;
-    }
-
-    var cache = {};
-
-    async function getAvatar(username) {
-      var key = String(username || "");
-      if (!key) return "";
-
-      if (cache[key] !== undefined) {
-        return cache[key];
+    var usernames = [];
+    posts.forEach(function (post) {
+      if (post && post.authorUsername) {
+        usernames.push(post.authorUsername);
       }
 
-      try {
-        var result = await Heavenly.api.getAvatar(key);
-        cache[key] = result && result.ok && result.data ? result.data : "";
-        return cache[key];
-      } catch (error) {
-        cache[key] = "";
-        return "";
-      }
-    }
+      (Array.isArray(post.comments) ? post.comments : []).forEach(function (comment) {
+        if (comment && comment.authorUsername) {
+          usernames.push(comment.authorUsername);
+        }
+      });
+    });
 
-    var enriched = [];
+    await preloadAvatars(usernames);
 
-    for (var i = 0; i < posts.length; i++) {
-      var post = Object.assign({}, posts[i]);
+    return posts.map(function (post) {
+      var nextPost = Object.assign({}, post);
 
-      if (!post.authorAvatar) {
-        post.authorAvatar = await getAvatar(post.authorUsername);
+      if (!nextPost.authorAvatar) {
+        nextPost.authorAvatar = Heavenly.cache.avatars[getAvatarCacheKey(nextPost.authorUsername)] || "";
       }
 
-      post.comments = Array.isArray(post.comments) ? post.comments.slice() : [];
+      nextPost.comments = (Array.isArray(post.comments) ? post.comments : []).map(function (comment) {
+        var nextComment = Object.assign({}, comment);
 
-      for (var j = 0; j < post.comments.length; j++) {
-        var comment = Object.assign({}, post.comments[j]);
-
-        if (!comment.authorAvatar) {
-          comment.authorAvatar = await getAvatar(comment.authorUsername);
+        if (!nextComment.authorAvatar) {
+          nextComment.authorAvatar = Heavenly.cache.avatars[getAvatarCacheKey(nextComment.authorUsername)] || "";
         }
 
-        post.comments[j] = comment;
-      }
+        return nextComment;
+      });
 
-      enriched.push(post);
-    }
-
-    return enriched;
+      return nextPost;
+    });
   }
 
   async function renderProfileFeed(options) {
@@ -587,6 +663,15 @@ Heavenly.screens = Heavenly.screens || {};
 
     Heavenly.storage.setSettings(user, settings);
 
+    var profileKey = getProfileCacheKey(user);
+    if (Heavenly.cache.profiles[profileKey] && Heavenly.cache.profiles[profileKey].settings) {
+      Heavenly.cache.profiles[profileKey].settings = Object.assign(
+        {},
+        Heavenly.cache.profiles[profileKey].settings,
+        settings
+      );
+    }
+
     await applyProfileImages();
     closeInfoBoxPopup();
 
@@ -737,13 +822,17 @@ Heavenly.screens = Heavenly.screens || {};
 
   async function applyProfileImages() {
     applyProfilePopupLabels();
-    await applyProfileIdentity();
-    await applyAvatarImage();
-    await applyCoverImage();
-    await applyRelationshipInfo();
-    await applyInfoBoxDetails();
-    await applyHomeProfileTheme();
-    await applyProfileFeedHeading();
+
+    await Promise.all([
+      applyProfileIdentity(),
+      applyAvatarImage(),
+      applyCoverImage(),
+      applyRelationshipInfo(),
+      applyInfoBoxDetails(),
+      applyHomeProfileTheme(),
+      applyProfileFeedHeading()
+    ]);
+
     await renderProfileFeed();
 
     if (Heavenly.posts && Heavenly.posts.create && Heavenly.posts.create.initAllComposers) {
@@ -826,6 +915,9 @@ Heavenly.screens = Heavenly.screens || {};
       return normalizeName(entry) !== normalizeName(userA);
     });
 
+    Heavenly.cache.friends[getFriendsCacheKey(userA)] = friendsA;
+    Heavenly.cache.friends[getFriendsCacheKey(userB)] = friendsB;
+
     if (Heavenly.api.setFriends) {
       await Heavenly.api.setFriends(userA, friendsA);
       await Heavenly.api.setFriends(userB, friendsB);
@@ -846,9 +938,11 @@ Heavenly.screens = Heavenly.screens || {};
       return;
     }
 
-    for (var index = 0; index < blockedUsers.length; index++) {
-      var username = blockedUsers[index];
+    await preloadAvatars(blockedUsers);
 
+    var fragment = document.createDocumentFragment();
+
+    blockedUsers.forEach(function (username) {
       var item = document.createElement("div");
       item.className = "friendItem";
 
@@ -857,40 +951,30 @@ Heavenly.screens = Heavenly.screens || {};
       avatar.innerText = getInitials(username);
       avatar.title = "Profil öffnen";
 
-      if (Heavenly.api && Heavenly.api.getAvatar) {
-        try {
-          var avatarResult = await Heavenly.api.getAvatar(username);
-          if (avatarResult && avatarResult.ok && avatarResult.data) {
-            avatar.innerText = "";
-            avatar.style.backgroundImage = 'url("' + avatarResult.data + '")';
-            avatar.style.backgroundSize = "cover";
-            avatar.style.backgroundPosition = "center";
-            avatar.style.backgroundRepeat = "no-repeat";
-          }
-        } catch (error) {
-          console.warn("Blocklist avatar load failed", error);
-        }
+      var avatarData = Heavenly.cache.avatars[getAvatarCacheKey(username)] || "";
+      if (avatarData) {
+        avatar.innerText = "";
+        avatar.style.backgroundImage = 'url("' + avatarData + '")';
+        avatar.style.backgroundSize = "cover";
+        avatar.style.backgroundPosition = "center";
+        avatar.style.backgroundRepeat = "no-repeat";
       }
 
-      avatar.onclick = (function (name) {
-        return function () {
-          closeBlocklistPopup();
-          if (typeof window.openUserProfile === "function") {
-            window.openUserProfile(name);
-          }
-        };
-      })(username);
+      avatar.onclick = function () {
+        closeBlocklistPopup();
+        if (typeof window.openUserProfile === "function") {
+          window.openUserProfile(username);
+        }
+      };
 
       var meta = document.createElement("div");
       meta.className = "friendMeta friendClickable";
-      meta.onclick = (function (name) {
-        return function () {
-          closeBlocklistPopup();
-          if (typeof window.openUserProfile === "function") {
-            window.openUserProfile(name);
-          }
-        };
-      })(username);
+      meta.onclick = function () {
+        closeBlocklistPopup();
+        if (typeof window.openUserProfile === "function") {
+          window.openUserProfile(username);
+        }
+      };
 
       var nameEl = document.createElement("div");
       nameEl.className = "friendName";
@@ -908,18 +992,18 @@ Heavenly.screens = Heavenly.screens || {};
       unblockBtn.type = "button";
       unblockBtn.title = "Entblocken";
       unblockBtn.innerText = "↺";
-      unblockBtn.onclick = (function (name) {
-        return function () {
-          window.unblockUser(name);
-        };
-      })(username);
+      unblockBtn.onclick = function () {
+        window.unblockUser(username);
+      };
 
       item.appendChild(avatar);
       item.appendChild(meta);
       item.appendChild(unblockBtn);
 
-      list.appendChild(item);
-    }
+      fragment.appendChild(item);
+    });
+
+    list.appendChild(fragment);
   }
 
   function openBlocklistPopup() {

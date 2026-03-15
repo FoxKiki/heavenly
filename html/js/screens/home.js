@@ -1,8 +1,14 @@
 window.Heavenly = window.Heavenly || {};
 Heavenly.screens = Heavenly.screens || {};
+Heavenly.cache = Heavenly.cache || {};
+Heavenly.cache.avatars = Heavenly.cache.avatars || {};
+Heavenly.cache.profiles = Heavenly.cache.profiles || {};
+Heavenly.cache.accounts = Heavenly.cache.accounts || null;
 
 (function () {
   var pendingRemoveFriendName = null;
+  var globalSearchTimer = null;
+  var globalSearchRunId = 0;
 
   function getEl(id) {
     return document.getElementById(id);
@@ -90,44 +96,172 @@ Heavenly.screens = Heavenly.screens || {};
     }
   }
 
+  function getAvatarCacheKey(username) {
+    return normalizeName(username);
+  }
+
+  function getProfileCacheKey(username) {
+    return normalizeName(username);
+  }
+
+  async function getAvatarCached(username) {
+    var key = getAvatarCacheKey(username);
+    if (!key) return "";
+
+    if (Heavenly.cache.avatars[key] !== undefined) {
+      return Heavenly.cache.avatars[key];
+    }
+
+    if (!Heavenly.api || !Heavenly.api.getAvatar) {
+      Heavenly.cache.avatars[key] = "";
+      return "";
+    }
+
+    try {
+      var result = await Heavenly.api.getAvatar(username);
+      Heavenly.cache.avatars[key] = result && result.ok && result.data ? result.data : "";
+      return Heavenly.cache.avatars[key];
+    } catch (error) {
+      Heavenly.cache.avatars[key] = "";
+      console.warn("Avatar load failed", error);
+      return "";
+    }
+  }
+
+  async function getProfileCached(username) {
+    var key = getProfileCacheKey(username);
+    if (!key) return null;
+
+    if (Heavenly.cache.profiles[key] !== undefined) {
+      return Heavenly.cache.profiles[key];
+    }
+
+    if (!Heavenly.api || !Heavenly.api.getProfile) {
+      Heavenly.cache.profiles[key] = null;
+      return null;
+    }
+
+    try {
+      var result = await Heavenly.api.getProfile(username);
+      Heavenly.cache.profiles[key] = result && result.ok && result.data ? result.data : null;
+      return Heavenly.cache.profiles[key];
+    } catch (error) {
+      Heavenly.cache.profiles[key] = null;
+      console.warn("Profile load failed", error);
+      return null;
+    }
+  }
+
+  async function preloadAvatars(usernames) {
+    var unique = {};
+    var tasks = [];
+
+    (usernames || []).forEach(function (name) {
+      var key = getAvatarCacheKey(name);
+      if (!key || unique[key]) return;
+      unique[key] = true;
+
+      if (Heavenly.cache.avatars[key] === undefined) {
+        tasks.push(getAvatarCached(name));
+      }
+    });
+
+    if (tasks.length) {
+      await Promise.all(tasks);
+    }
+  }
+
+  async function preloadProfiles(usernames) {
+    var unique = {};
+    var tasks = [];
+
+    (usernames || []).forEach(function (name) {
+      var key = getProfileCacheKey(name);
+      if (!key || unique[key]) return;
+      unique[key] = true;
+
+      if (Heavenly.cache.profiles[key] === undefined) {
+        tasks.push(getProfileCached(name));
+      }
+    });
+
+    if (tasks.length) {
+      await Promise.all(tasks);
+    }
+  }
+
+  async function getAccountsCached() {
+    if (Array.isArray(Heavenly.cache.accounts)) {
+      return Heavenly.cache.accounts.slice();
+    }
+
+    var accounts = [];
+
+    if (Heavenly.api && Heavenly.api.getAccounts) {
+      try {
+        var accountsResult = await Heavenly.api.getAccounts();
+        if (accountsResult && accountsResult.ok && Array.isArray(accountsResult.data)) {
+          accounts = accountsResult.data.slice();
+        }
+      } catch (error) {
+        console.warn("Account search load failed", error);
+      }
+    }
+
+    if (accounts.length === 0 && Heavenly.storage && Heavenly.storage.getAccounts) {
+      accounts = Heavenly.storage.getAccounts().map(function (account) {
+        return account.username;
+      });
+    }
+
+    Heavenly.cache.accounts = accounts.slice();
+    return accounts;
+  }
+
+  function invalidateUserCaches(username) {
+    var avatarKey = getAvatarCacheKey(username);
+    var profileKey = getProfileCacheKey(username);
+
+    if (avatarKey) {
+      delete Heavenly.cache.avatars[avatarKey];
+    }
+
+    if (profileKey) {
+      delete Heavenly.cache.profiles[profileKey];
+    }
+  }
+
   async function renderHomeFeed() {
     if (!Heavenly.posts || !Heavenly.posts.store || !Heavenly.posts.render) return;
 
     var posts = Heavenly.posts.store.getFeedPosts("home") || [];
+    var usernames = [];
 
-    if (Heavenly.api && Heavenly.api.getAvatar) {
-      var cache = {};
-
-      async function getAvatar(username) {
-        var key = String(username || "");
-        if (!key) return "";
-
-        if (cache[key] !== undefined) {
-          return cache[key];
-        }
-
-        try {
-          var result = await Heavenly.api.getAvatar(key);
-          cache[key] = result && result.ok && result.data ? result.data : "";
-          return cache[key];
-        } catch (error) {
-          cache[key] = "";
-          console.warn("Home feed avatar load failed", error);
-          return "";
-        }
+    for (var i = 0; i < posts.length; i++) {
+      if (posts[i] && posts[i].authorUsername) {
+        usernames.push(posts[i].authorUsername);
       }
 
-      for (var i = 0; i < posts.length; i++) {
-        if (!posts[i].authorAvatar) {
-          posts[i].authorAvatar = await getAvatar(posts[i].authorUsername);
+      posts[i].comments = Array.isArray(posts[i].comments) ? posts[i].comments : [];
+
+      for (var j = 0; j < posts[i].comments.length; j++) {
+        if (posts[i].comments[j] && posts[i].comments[j].authorUsername) {
+          usernames.push(posts[i].comments[j].authorUsername);
         }
+      }
+    }
 
-        posts[i].comments = Array.isArray(posts[i].comments) ? posts[i].comments : [];
+    await preloadAvatars(usernames);
 
-        for (var j = 0; j < posts[i].comments.length; j++) {
-          if (!posts[i].comments[j].authorAvatar) {
-            posts[i].comments[j].authorAvatar = await getAvatar(posts[i].comments[j].authorUsername);
-          }
+    for (var a = 0; a < posts.length; a++) {
+      if (!posts[a].authorAvatar) {
+        posts[a].authorAvatar = Heavenly.cache.avatars[getAvatarCacheKey(posts[a].authorUsername)] || "";
+      }
+
+      for (var b = 0; b < posts[a].comments.length; b++) {
+        if (!posts[a].comments[b].authorAvatar) {
+          posts[a].comments[b].authorAvatar =
+            Heavenly.cache.avatars[getAvatarCacheKey(posts[a].comments[b].authorUsername)] || "";
         }
       }
     }
@@ -151,19 +285,15 @@ Heavenly.screens = Heavenly.screens || {};
       chip.style.backgroundRepeat = "";
     }
 
-    if (Heavenly.api && Heavenly.api.getAvatar && chip) {
-      try {
-        var avatarResult = await Heavenly.api.getAvatar(username);
+    if (chip) {
+      var avatar = await getAvatarCached(username);
 
-        if (avatarResult && avatarResult.ok && avatarResult.data) {
-          chip.innerText = "";
-          chip.style.backgroundImage = 'url("' + avatarResult.data + '")';
-          chip.style.backgroundSize = "cover";
-          chip.style.backgroundPosition = "center";
-          chip.style.backgroundRepeat = "no-repeat";
-        }
-      } catch (error) {
-        console.warn("Home avatar load failed", error);
+      if (avatar) {
+        chip.innerText = "";
+        chip.style.backgroundImage = 'url("' + avatar + '")';
+        chip.style.backgroundSize = "cover";
+        chip.style.backgroundPosition = "center";
+        chip.style.backgroundRepeat = "no-repeat";
       }
     }
 
@@ -182,15 +312,12 @@ Heavenly.screens = Heavenly.screens || {};
     updateFriendRequestDot();
 
     try {
-      await window.renderFriends();
+      await Promise.all([
+        typeof window.renderFriends === "function" ? window.renderFriends() : Promise.resolve(),
+        renderHomeFeed()
+      ]);
     } catch (error) {
-      console.error("renderFriends failed", error);
-    }
-
-    try {
-      await renderHomeFeed();
-    } catch (error) {
-      console.error("renderHomeFeed failed", error);
+      console.error("showHome render failed", error);
     }
   };
 
@@ -232,44 +359,38 @@ Heavenly.screens = Heavenly.screens || {};
       return;
     }
 
-    for (var index = 0; index < filtered.length; index++) {
-      var name = filtered[index];
+    await Promise.all([
+      preloadAvatars(filtered),
+      preloadProfiles(filtered)
+    ]);
 
+    var fragment = document.createDocumentFragment();
+
+    filtered.forEach(function (name) {
       var item = document.createElement("div");
       item.className = "friendItem";
 
       var avatar = document.createElement("div");
       avatar.className = "friendAvatar friendClickable";
       avatar.innerText = getInitials(name);
-      avatar.onclick = (function (username) {
-        return function () {
-          openProfilePreview(username);
-        };
-      })(name);
+      avatar.onclick = function () {
+        openProfilePreview(name);
+      };
 
-      if (Heavenly.api && Heavenly.api.getAvatar) {
-        try {
-          var avatarResult = await Heavenly.api.getAvatar(name);
-
-          if (avatarResult && avatarResult.ok && avatarResult.data) {
-            avatar.innerText = "";
-            avatar.style.backgroundImage = 'url("' + avatarResult.data + '")';
-            avatar.style.backgroundSize = "cover";
-            avatar.style.backgroundPosition = "center";
-            avatar.style.backgroundRepeat = "no-repeat";
-          }
-        } catch (error) {
-          console.warn("Friend avatar load failed", error);
-        }
+      var avatarData = Heavenly.cache.avatars[getAvatarCacheKey(name)] || "";
+      if (avatarData) {
+        avatar.innerText = "";
+        avatar.style.backgroundImage = 'url("' + avatarData + '")';
+        avatar.style.backgroundSize = "cover";
+        avatar.style.backgroundPosition = "center";
+        avatar.style.backgroundRepeat = "no-repeat";
       }
 
       var meta = document.createElement("div");
       meta.className = "friendMeta friendClickable";
-      meta.onclick = (function (username) {
-        return function () {
-          openProfilePreview(username);
-        };
-      })(name);
+      meta.onclick = function () {
+        openProfilePreview(name);
+      };
 
       var friendName = document.createElement("div");
       friendName.className = "friendName";
@@ -279,21 +400,9 @@ Heavenly.screens = Heavenly.screens || {};
       friendStatus.className = "friendStatus";
       friendStatus.innerText = "Freund";
 
-      if (Heavenly.api && Heavenly.api.getProfile) {
-        try {
-          var profileResult = await Heavenly.api.getProfile(name);
-          if (
-            profileResult &&
-            profileResult.ok &&
-            profileResult.data &&
-            profileResult.data.settings &&
-            profileResult.data.settings.status
-          ) {
-            friendStatus.innerText = profileResult.data.settings.status;
-          }
-        } catch (error) {
-          console.warn("Friend status load failed", error);
-        }
+      var profile = Heavenly.cache.profiles[getProfileCacheKey(name)];
+      if (profile && profile.settings && profile.settings.status) {
+        friendStatus.innerText = profile.settings.status;
       }
 
       var removeBtn = document.createElement("button");
@@ -301,11 +410,9 @@ Heavenly.screens = Heavenly.screens || {};
       removeBtn.type = "button";
       removeBtn.title = "Freund entfernen";
       removeBtn.innerHTML = "✖";
-      removeBtn.onclick = (function (username) {
-        return function () {
-          window.openRemoveFriendPopup(username);
-        };
-      })(name);
+      removeBtn.onclick = function () {
+        window.openRemoveFriendPopup(name);
+      };
 
       meta.appendChild(friendName);
       meta.appendChild(friendStatus);
@@ -314,8 +421,10 @@ Heavenly.screens = Heavenly.screens || {};
       item.appendChild(meta);
       item.appendChild(removeBtn);
 
-      list.appendChild(item);
-    }
+      fragment.appendChild(item);
+    });
+
+    list.appendChild(fragment);
   };
 
   window.addDemoFriends = async function () {
@@ -369,6 +478,8 @@ Heavenly.screens = Heavenly.screens || {};
       return;
     }
 
+    var fragment = document.createDocumentFragment();
+
     requests.forEach(function (name) {
       var item = document.createElement("div");
       item.className = "requestItem";
@@ -417,9 +528,10 @@ Heavenly.screens = Heavenly.screens || {};
       item.appendChild(label);
       item.appendChild(actions);
 
-      list.appendChild(item);
+      fragment.appendChild(item);
     });
 
+    list.appendChild(fragment);
     updateFriendRequestDot();
   };
 
@@ -464,6 +576,8 @@ Heavenly.screens = Heavenly.screens || {};
       await Heavenly.api.setFriends(user, userFriends);
       await Heavenly.api.setFriends(name, otherFriends);
     }
+
+    invalidateUserCaches(name);
 
     window.renderFriendRequests();
     await window.renderFriends();
@@ -547,6 +661,8 @@ Heavenly.screens = Heavenly.screens || {};
       await Heavenly.api.setFriends(pendingRemoveFriendName, otherFriends);
     }
 
+    invalidateUserCaches(pendingRemoveFriendName);
+
     var removedName = pendingRemoveFriendName;
     window.closeRemoveFriendPopup();
     await window.renderFriends();
@@ -570,13 +686,10 @@ Heavenly.screens = Heavenly.screens || {};
     }
   };
 
-  window.onGlobalSearch = async function () {
+  async function runGlobalSearch(runId, rawQuery) {
     var user = getCurrentUser();
-    var input = getEl("globalSearch");
     var list = getEl("globalSearchResults");
-
-    var rawQuery = input ? input.value.trim() : "";
-    var query = rawQuery.toLowerCase();
+    var query = String(rawQuery || "").trim().toLowerCase();
 
     if (!list) return query;
 
@@ -586,23 +699,10 @@ Heavenly.screens = Heavenly.screens || {};
       return query;
     }
 
-    var accounts = [];
+    var accounts = await getAccountsCached();
 
-    if (Heavenly.api && Heavenly.api.getAccounts) {
-      try {
-        var accountsResult = await Heavenly.api.getAccounts();
-        if (accountsResult && accountsResult.ok && Array.isArray(accountsResult.data)) {
-          accounts = accountsResult.data;
-        }
-      } catch (error) {
-        console.warn("Account search load failed", error);
-      }
-    }
-
-    if (accounts.length === 0 && Heavenly.storage && Heavenly.storage.getAccounts) {
-      accounts = Heavenly.storage.getAccounts().map(function (account) {
-        return account.username;
-      });
+    if (runId !== globalSearchRunId) {
+      return query;
     }
 
     var cleanQuery = query.replace(/^#+/, "").trim();
@@ -623,6 +723,12 @@ Heavenly.screens = Heavenly.screens || {};
       });
     }).slice(0, 6);
 
+    await preloadAvatars(userMatches);
+
+    if (runId !== globalSearchRunId) {
+      return query;
+    }
+
     list.innerHTML = "";
 
     if (userMatches.length > 0) {
@@ -631,35 +737,25 @@ Heavenly.screens = Heavenly.screens || {};
       peopleTitle.innerText = "Personen";
       list.appendChild(peopleTitle);
 
-      for (var index = 0; index < userMatches.length; index++) {
-        var name = userMatches[index];
-
+      userMatches.forEach(function (name) {
         var item = document.createElement("div");
         item.className = "searchResultItem";
-        item.onclick = (function (username) {
-          return function () {
-            openProfilePreview(username);
-            window.closeGlobalSearchPopup();
-          };
-        })(name);
+        item.onclick = function () {
+          openProfilePreview(name);
+          window.closeGlobalSearchPopup();
+        };
 
         var avatar = document.createElement("div");
         avatar.className = "searchResultAvatar";
         avatar.innerText = getInitials(name);
 
-        if (Heavenly.api && Heavenly.api.getAvatar) {
-          try {
-            var avatarResult = await Heavenly.api.getAvatar(name);
-            if (avatarResult && avatarResult.ok && avatarResult.data) {
-              avatar.innerText = "";
-              avatar.style.backgroundImage = 'url("' + avatarResult.data + '")';
-              avatar.style.backgroundSize = "cover";
-              avatar.style.backgroundPosition = "center";
-              avatar.style.backgroundRepeat = "no-repeat";
-            }
-          } catch (error) {
-            console.warn("Avatar search load failed", error);
-          }
+        var avatarData = Heavenly.cache.avatars[getAvatarCacheKey(name)] || "";
+        if (avatarData) {
+          avatar.innerText = "";
+          avatar.style.backgroundImage = 'url("' + avatarData + '")';
+          avatar.style.backgroundSize = "cover";
+          avatar.style.backgroundPosition = "center";
+          avatar.style.backgroundRepeat = "no-repeat";
         }
 
         var meta = document.createElement("div");
@@ -680,7 +776,7 @@ Heavenly.screens = Heavenly.screens || {};
         item.appendChild(meta);
 
         list.appendChild(item);
-      }
+      });
     }
 
     if (cleanQuery) {
@@ -765,6 +861,24 @@ Heavenly.screens = Heavenly.screens || {};
 
     window.openGlobalSearchPopup();
     return query;
+  }
+
+  window.onGlobalSearch = function () {
+    var input = getEl("globalSearch");
+    var rawQuery = input ? input.value : "";
+
+    globalSearchRunId += 1;
+    var runId = globalSearchRunId;
+
+    if (globalSearchTimer) {
+      clearTimeout(globalSearchTimer);
+    }
+
+    globalSearchTimer = setTimeout(function () {
+      runGlobalSearch(runId, rawQuery);
+    }, 180);
+
+    return String(rawQuery || "").trim().toLowerCase();
   };
 
   window.openDMs = function () {
