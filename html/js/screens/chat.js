@@ -279,7 +279,11 @@ window.Heavenly = window.Heavenly || {};
     var activeButtons = document.querySelectorAll(".dmMessageMenuBtn.active");
 
     openMenus.forEach(function (menu) {
-      menu.classList.remove("open");
+      if (Heavenly.overlay && Heavenly.overlay.close) {
+        Heavenly.overlay.close(menu, "open");
+      } else {
+        menu.classList.remove("open");
+      }
     });
 
     activeButtons.forEach(function (button) {
@@ -294,7 +298,12 @@ window.Heavenly = window.Heavenly || {};
     closeMessageMenu();
 
     if (shouldOpen) {
-      menu.classList.add("open");
+      if (Heavenly.overlay && Heavenly.overlay.open) {
+        Heavenly.overlay.open(menu, "open");
+      } else {
+        menu.classList.add("open");
+      }
+
       button.classList.add("active");
     }
   }
@@ -367,7 +376,12 @@ window.Heavenly = window.Heavenly || {};
     var modal = getEl("dmActionModal");
     if (!modal) return;
 
-    modal.classList.remove("active");
+    if (Heavenly.overlay && Heavenly.overlay.close) {
+      Heavenly.overlay.close(modal, "active");
+    } else {
+      modal.classList.remove("active");
+    }
+
     modal._resolver = null;
   }
 
@@ -412,7 +426,11 @@ window.Heavenly = window.Heavenly || {};
         finish(false);
       };
 
-      modal.classList.add("active");
+      if (Heavenly.overlay && Heavenly.overlay.open) {
+        Heavenly.overlay.open(modal, "active");
+      } else {
+        modal.classList.add("active");
+      }
     });
   }
 
@@ -457,7 +475,11 @@ window.Heavenly = window.Heavenly || {};
         finish(null);
       };
 
-      modal.classList.add("active");
+      if (Heavenly.overlay && Heavenly.overlay.open) {
+        Heavenly.overlay.open(modal, "active");
+      } else {
+        modal.classList.add("active");
+      }
 
       setTimeout(function () {
         input.focus();
@@ -805,12 +827,12 @@ window.Heavenly = window.Heavenly || {};
         actions.className = "dmMessageActions";
 
         var menuBtn = document.createElement("button");
-        menuBtn.className = "dmMessageMenuBtn";
+        menuBtn.className = "dmMessageMenuBtn uiMenuBtn";
         menuBtn.type = "button";
         menuBtn.innerText = "⋯";
 
         var menu = document.createElement("div");
-        menu.className = "dmMessageMenu";
+        menu.className = "dmMessageMenu uiMenu";
 
         menuBtn.onclick = function (menuEl, buttonEl) {
           return function (event) {
@@ -903,7 +925,12 @@ window.Heavenly = window.Heavenly || {};
 
           if (viewer && viewerImg) {
             viewerImg.src = this.src;
-            viewer.classList.add("open");
+
+            if (Heavenly.overlay && Heavenly.overlay.open) {
+              Heavenly.overlay.open(viewer, "open");
+            } else {
+              viewer.classList.add("open");
+            }
           }
         };
 
@@ -920,7 +947,12 @@ window.Heavenly = window.Heavenly || {};
 
           if (viewer && viewerImg) {
             viewerImg.src = this.src;
-            viewer.classList.add("open");
+
+            if (Heavenly.overlay && Heavenly.overlay.open) {
+              Heavenly.overlay.open(viewer, "open");
+            } else {
+              viewer.classList.add("open");
+            }
           }
         };
 
@@ -989,7 +1021,13 @@ window.Heavenly = window.Heavenly || {};
     if (!panel) return;
 
     initDmImageUpload();
-    panel.classList.add("active");
+
+    if (Heavenly.overlay && Heavenly.overlay.open) {
+      Heavenly.overlay.open(panel, "active");
+    } else {
+      panel.classList.add("active");
+    }
+
     await refreshDmPanel();
   };
 
@@ -1000,7 +1038,11 @@ window.Heavenly = window.Heavenly || {};
     var panel = getEl("dmPanel");
     if (!panel) return;
 
-    panel.classList.remove("active");
+    if (Heavenly.overlay && Heavenly.overlay.close) {
+      Heavenly.overlay.close(panel, "active");
+    } else {
+      panel.classList.remove("active");
+    }
   };
 
   window.openChatWithUser = async function (username) {
@@ -1164,6 +1206,4 @@ window.Heavenly = window.Heavenly || {};
 
   window.openDmConfirm = openDmConfirm;
   window.openDmPrompt = openDmPrompt;
-
-
 })();

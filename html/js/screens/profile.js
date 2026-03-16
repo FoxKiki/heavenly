@@ -8,6 +8,7 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
 
 (function () {
   var THEME_KEY_PREFIX = "heavenly_theme_";
+  var profileClockMirrorTimer = null;
 
   function getEl(id) {
     return document.getElementById(id);
@@ -54,6 +55,38 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     var settings = Heavenly.storage.getSettings(user) || {};
     settings.blockedUsers = Array.isArray(list) ? list : [];
     Heavenly.storage.setSettings(user, settings);
+  }
+
+  function syncProfileClockMirror() {
+    var homeTime = getEl("clockTime");
+    var homeDate = getEl("clockDate");
+    var profileTime = getEl("clockTimeProfile");
+    var profileDate = getEl("clockDateProfile");
+
+    if (homeTime && profileTime) {
+      profileTime.innerText = homeTime.innerText || "--:--:--";
+    }
+
+    if (homeDate && profileDate) {
+      profileDate.innerText = homeDate.innerText || "--.--.----";
+    }
+  }
+
+  function startProfileClockMirror() {
+    syncProfileClockMirror();
+
+    if (profileClockMirrorTimer) {
+      clearInterval(profileClockMirrorTimer);
+    }
+
+    profileClockMirrorTimer = setInterval(syncProfileClockMirror, 500);
+  }
+
+  function stopProfileClockMirror() {
+    if (profileClockMirrorTimer) {
+      clearInterval(profileClockMirrorTimer);
+      profileClockMirrorTimer = null;
+    }
   }
 
   function getPlaceholderDataUrl(type) {
@@ -727,10 +760,13 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
       profileContent.style.padding = "";
     }
 
-    document.querySelectorAll(".profileInfoBox, .profileMainBox, .profileStatus").forEach(function (element) {
-      element.style.background = profileBoxBg;
+    document.querySelectorAll(".profileInfoBox, .profileMainBox, .profileStatus, .coverBox").forEach(function (element) {
       element.style.borderColor = profileBorderColor;
       element.style.color = profileTextColor;
+    });
+
+    document.querySelectorAll(".profileInfoBox, .profileMainBox, .profileStatus").forEach(function (element) {
+      element.style.background = profileBoxBg;
     });
 
     document.querySelectorAll(".profileInfoBtn, .profileInlineBtn, .profileLinkBtn, .profileInfoItem").forEach(function (element) {
@@ -833,6 +869,7 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
       applyProfileFeedHeading()
     ]);
 
+    syncProfileClockMirror();
     await renderProfileFeed();
 
     if (Heavenly.posts && Heavenly.posts.create && Heavenly.posts.create.initAllComposers) {
@@ -1368,6 +1405,7 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     }
 
     initProfileUploads();
+    startProfileClockMirror();
     await applyProfileImages();
     closeProfileMenu();
     updateProfileActionVisibility();
@@ -1387,6 +1425,7 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     }
 
     initProfileUploads();
+    startProfileClockMirror();
     await applyProfileImages();
     closeProfileMenu();
     updateProfileActionVisibility();
@@ -1401,6 +1440,7 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     closeInfoBoxPopupSafe();
     closeDeleteAccountPopup();
     closeBlocklistPopup();
+    stopProfileClockMirror();
 
     if (Heavenly.state) {
       Heavenly.state.viewedProfileUser = null;
@@ -1594,9 +1634,11 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
 
   document.addEventListener("DOMContentLoaded", function () {
     applyProfilePopupLabels();
+    syncProfileClockMirror();
   });
 
   setTimeout(function () {
     applyProfilePopupLabels();
+    syncProfileClockMirror();
   }, 0);
 })();

@@ -166,7 +166,11 @@ Heavenly.posts = Heavenly.posts || {};
 
   function closePostMenus() {
     document.querySelectorAll(".postMenu.open").forEach(function (menu) {
-      menu.classList.remove("open");
+      if (Heavenly.overlay && Heavenly.overlay.close) {
+        Heavenly.overlay.close(menu, "open");
+      } else {
+        menu.classList.remove("open");
+      }
     });
 
     document.querySelectorAll(".postMenuBtn.active").forEach(function (btn) {
@@ -187,7 +191,12 @@ Heavenly.posts = Heavenly.posts || {};
     closePostMenus();
 
     if (shouldOpen) {
-      menu.classList.add("open");
+      if (Heavenly.overlay && Heavenly.overlay.open) {
+        Heavenly.overlay.open(menu, "open");
+      } else {
+        menu.classList.add("open");
+      }
+
       btn.classList.add("active");
     }
   }
@@ -250,9 +259,9 @@ Heavenly.posts = Heavenly.posts || {};
 
     if (ownPost) {
       menuMarkup = [
-        '<div class="postMenuWrap">',
-        '<button type="button" class="postMenuBtn" id="postMenuBtn_' + post.id + '" onclick="Heavenly.posts.render.togglePostMenu(\'' + post.id + '\', event)">⋯</button>',
-        '<div class="postMenu" id="postMenu_' + post.id + '">',
+        '<div class="postMenuWrap uiMenuWrap">',
+        '<button type="button" class="postMenuBtn uiMenuBtn" id="postMenuBtn_' + post.id + '" onclick="Heavenly.posts.render.togglePostMenu(\'' + post.id + '\', event)">⋯</button>',
+        '<div class="postMenu uiMenu" id="postMenu_' + post.id + '">',
         '<button type="button" onclick="event.stopPropagation(); Heavenly.posts.render.handleEditClick(\'' + post.id + '\', \'' + encodeText(post.text || "") + '\', \'' + feedType + '\', ' + ownerOption + ')">Bearbeiten</button>',
         '<button type="button" onclick="event.stopPropagation(); Heavenly.posts.render.handleDeleteClick(\'' + post.id + '\', \'' + feedType + '\', ' + ownerOption + ')">Löschen</button>',
         '</div>',

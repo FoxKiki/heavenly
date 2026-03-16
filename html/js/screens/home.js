@@ -9,6 +9,7 @@ Heavenly.cache.accounts = Heavenly.cache.accounts || null;
   var pendingRemoveFriendName = null;
   var globalSearchTimer = null;
   var globalSearchRunId = 0;
+  var profileClockMirrorTimer = null;
 
   function getEl(id) {
     return document.getElementById(id);
@@ -74,6 +75,31 @@ Heavenly.cache.accounts = Heavenly.cache.accounts || null;
     } else {
       dot.classList.remove("active");
     }
+  }
+
+  function syncProfileClockMirror() {
+    var homeTime = getEl("clockTime");
+    var homeDate = getEl("clockDate");
+    var profileTime = getEl("clockTimeProfile");
+    var profileDate = getEl("clockDateProfile");
+
+    if (homeTime && profileTime) {
+      profileTime.innerText = homeTime.innerText || "--:--:--";
+    }
+
+    if (homeDate && profileDate) {
+      profileDate.innerText = homeDate.innerText || "--.--.----";
+    }
+  }
+
+  function startProfileClockMirror() {
+    syncProfileClockMirror();
+
+    if (profileClockMirrorTimer) {
+      clearInterval(profileClockMirrorTimer);
+    }
+
+    profileClockMirrorTimer = setInterval(syncProfileClockMirror, 500);
   }
 
   function openProfilePreview(name) {
@@ -309,6 +335,7 @@ Heavenly.cache.accounts = Heavenly.cache.accounts || null;
       Heavenly.clock.start();
     }
 
+    startProfileClockMirror();
     updateFriendRequestDot();
 
     try {

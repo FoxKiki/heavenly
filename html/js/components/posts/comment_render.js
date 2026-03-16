@@ -60,7 +60,11 @@ Heavenly.posts = Heavenly.posts || {};
 
   function closeCommentMenus() {
     document.querySelectorAll(".commentMenu.open").forEach(function (menu) {
-      menu.classList.remove("open");
+      if (Heavenly.overlay && Heavenly.overlay.close) {
+        Heavenly.overlay.close(menu, "open");
+      } else {
+        menu.classList.remove("open");
+      }
     });
 
     document.querySelectorAll(".commentMenuBtn.active").forEach(function (btn) {
@@ -81,7 +85,12 @@ Heavenly.posts = Heavenly.posts || {};
     closeCommentMenus();
 
     if (shouldOpen) {
-      menu.classList.add("open");
+      if (Heavenly.overlay && Heavenly.overlay.open) {
+        Heavenly.overlay.open(menu, "open");
+      } else {
+        menu.classList.add("open");
+      }
+
       btn.classList.add("active");
     }
   }
@@ -165,9 +174,9 @@ Heavenly.posts = Heavenly.posts || {};
       var likeCount = Array.isArray(comment.likes) ? comment.likes.length : 0;
 
       var menuMarkup = ownComment ? [
-        '<div class="commentMenuWrap">',
-        '<button type="button" class="commentMenuBtn" id="commentMenuBtn_' + comment.id + '" onclick="Heavenly.posts.commentRender.toggleCommentMenu(\'' + comment.id + '\', event)">⋯</button>',
-        '<div class="commentMenu" id="commentMenu_' + comment.id + '">',
+        '<div class="commentMenuWrap uiMenuWrap">',
+        '<button type="button" class="commentMenuBtn uiMenuBtn" id="commentMenuBtn_' + comment.id + '" onclick="Heavenly.posts.commentRender.toggleCommentMenu(\'' + comment.id + '\', event)">⋯</button>',
+        '<div class="commentMenu uiMenu" id="commentMenu_' + comment.id + '">',
         '<button type="button" onclick="event.stopPropagation(); Heavenly.posts.commentRender.handleEditComment(\'' + postId + '\', \'' + comment.id + '\', \'' + encodeText(comment.text || "") + '\', \'' + feedType + '\', ' + ownerOption + ')">Bearbeiten</button>',
         '<button type="button" onclick="event.stopPropagation(); Heavenly.posts.commentRender.handleDeleteComment(\'' + postId + '\', \'' + comment.id + '\', \'' + feedType + '\', ' + ownerOption + ')">Löschen</button>',
         '</div>',
