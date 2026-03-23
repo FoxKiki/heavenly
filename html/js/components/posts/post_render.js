@@ -480,6 +480,91 @@ Heavenly.posts = Heavenly.posts || {};
     closePostMenus();
   }
 
+    var infiniteFeedBindings = {};
+
+  function bindInfiniteFeed(containerId, options) {
+    options = options || {};
+
+    var container = document.getElementById(containerId);
+    if (!container) return;
+
+    var scrollElement =
+      options.scrollElement ||
+      container.closest(".feedBox") ||
+      container.closest(".profileContent") ||
+      container.parentElement;
+
+    if (!scrollElement) return;
+
+    var key = containerId;
+
+    if (!infiniteFeedBindings[key]) {
+      infiniteFeedBindings[key] = {
+        scrollElement: null,
+        onScroll: null,
+        loading: false,
+        hasMore: false,
+        onLoadMore: null
+      };
+    }
+
+    var binding = infiniteFeedBindings[key];
+    binding.hasMore = !!options.hasMore;
+    binding.onLoadMore = typeof options.onLoadMore === "function" ? options.onLoadMore : null;
+
+    if (binding.scrollElement !== scrollElement) {
+      if (binding.scrollElement && binding.onScroll) {
+        binding.scrollElement.removeEventListener("scroll", binding.onScroll);
+      }
+
+      binding.scrollElement = scrollElement;
+      binding.onScroll = function () {
+        if (binding.loading) return;
+        if (!binding.hasMore) return;
+        if (typeof binding.onLoadMore !== "function") return;
+
+        var remaining =
+          scrollElement.scrollHeight - scrollElement.scrollTop - scrollElement.clientHeight;
+
+        if (remaining > 220) return;
+
+        binding.loading = true;
+
+        Promise.resolve(binding.onLoadMore())
+          .catch(function (error) {
+            console.error("Infinite feed load failed", error);
+          })
+          .finally(function () {
+            setTimeout(function () {
+              binding.loading = false;
+            }, 120);
+          });
+      };
+
+      scrollElement.addEventListener("scroll", binding.onScroll);
+    }
+
+    setTimeout(function () {
+      if (binding.loading) return;
+      if (!binding.hasMore) return;
+      if (typeof binding.onLoadMore !== "function") return;
+
+      if (scrollElement.scrollHeight <= scrollElement.clientHeight + 40) {
+        binding.loading = true;
+
+        Promise.resolve(binding.onLoadMore())
+          .catch(function (error) {
+            console.error("Initial infinite feed load failed", error);
+          })
+          .finally(function () {
+            setTimeout(function () {
+              binding.loading = false;
+            }, 120);
+          });
+      }
+    }, 0);
+  }
+
   async function openPostConfirm(titleText, bodyText) {
     if (typeof window.openDmConfirm === "function") {
       return await window.openDmConfirm(titleText, bodyText);
@@ -537,7 +622,7 @@ Heavenly.posts = Heavenly.posts || {};
     });
   }
 
-  Heavenly.posts.render = {
+    Heavenly.posts.render = {
     renderPost: renderPost,
     renderFeed: renderFeed,
     handleEditClick: handleEditClick,
@@ -545,7 +630,8 @@ Heavenly.posts = Heavenly.posts || {};
     togglePostMenu: togglePostMenu,
     closePostMenus: closePostMenus,
     resetCommentComposer: resetCommentComposer,
-    ensureCommentComposerState: ensureCommentComposerState
+    ensureCommentComposerState: ensureCommentComposerState,
+    bindInfiniteFeed: bindInfiniteFeed
   };
 
   document.addEventListener("click", function (event) {

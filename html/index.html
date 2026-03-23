@@ -176,239 +176,226 @@
   </div>
 
   <!-- PROFILE -->
-  <div id="profileScreen" class="profileScreen screen">
-    <input id="avatarUploadInput" type="file" accept="image/*" hidden />
-    <input id="coverUploadInput" type="file" accept="image/*" hidden />
+<div id="profileScreen" class="profileScreen screen">
+  <input id="avatarUploadInput" type="file" accept="image/*" hidden />
+  <input id="coverUploadInput" type="file" accept="image/*" hidden />
 
-    <div class="appShell profileShell">
-      <aside class="appSidebar">
-        <div class="sidebarTop">
-          <div class="sidebarLogo">
-            <span class="sidebarLogoDot"></span>
-            <span class="sidebarLogoText">Heavenly</span>
-          </div>
+  <div class="appShell profileShell">
+    <aside class="appSidebar">
+      <div class="sidebarTop">
+        <div class="sidebarLogo">
+          <span class="sidebarLogoDot"></span>
+          <span class="sidebarLogoText">Heavenly</span>
         </div>
+      </div>
 
-        <nav class="sidebarNav">
-          <button class="sidebarNavBtn" type="button" onclick="closeProfile()">
-            <span class="sidebarNavIcon">⌂</span>
-            <span class="sidebarNavText">Home</span>
-          </button>
+      <nav class="sidebarNav">
+        <button class="sidebarNavBtn" type="button" onclick="closeProfile()">
+          <span class="sidebarNavIcon">⌂</span>
+          <span class="sidebarNavText">Home</span>
+        </button>
 
-          <button class="sidebarNavBtn active" type="button" onclick="openProfile()">
-            <span class="sidebarNavIcon">👤</span>
-            <span class="sidebarNavText">Profil</span>
-          </button>
+        <button class="sidebarNavBtn active" type="button" onclick="openProfile()">
+          <span class="sidebarNavIcon">👤</span>
+          <span class="sidebarNavText">Profil</span>
+        </button>
 
-          <button class="sidebarNavBtn" type="button" onclick="openDMs()">
-            <span class="sidebarNavIcon">✉</span>
-            <span class="sidebarNavText">Nachrichten</span>
-          </button>
+        <button class="sidebarNavBtn" type="button" onclick="openDMs()">
+          <span class="sidebarNavIcon">✉</span>
+          <span class="sidebarNavText">Nachrichten</span>
+        </button>
 
-          <button class="sidebarNavBtn" type="button" onclick="openNews()">
-            <span class="sidebarNavIcon">✦</span>
-            <span class="sidebarNavText">News</span>
-          </button>
-        </nav>
+        <button class="sidebarNavBtn" type="button" onclick="openNews()">
+          <span class="sidebarNavIcon">✦</span>
+          <span class="sidebarNavText">News</span>
+        </button>
+      </nav>
 
-        <div class="sidebarBottom">
-          <button class="sidebarNavBtn" type="button" onclick="closeProfile()">
-            <span class="sidebarNavIcon">←</span>
-            <span class="sidebarNavText">Zurück</span>
-          </button>
-        </div>
-      </aside>
+      <div class="sidebarBottom">
+        <button class="sidebarNavBtn" type="button" onclick="closeProfile()">
+          <span class="sidebarNavIcon">←</span>
+          <span class="sidebarNavText">Zurück</span>
+        </button>
+      </div>
+    </aside>
 
-      <div class="appMain">
-        <div class="appTopbar">
-          <div class="appTopbarLeft">
-            <button class="profileBackFloat topbarBackBtn" type="button" onclick="closeProfile()">← Back</button>
-          </div>
+    <div class="appMain profileMainLayout">
+      <div class="profileContent">
+        <div id="coverBox" class="coverBox panel" onclick="openImageViewer('cover')">
+          <div class="coverOverlay">
+            <div class="coverIdentity" onclick="openImageViewer('avatar'); event.stopPropagation();">
+              <div id="profilePic" class="profilePic">
+                <span id="profilePicText">KF</span>
+              </div>
 
-          <div class="appTopbarRight">
-            <div id="clockBoxProfile" class="clockBox smallClockBox">
-              <div id="clockTimeProfile" class="clockTime">--:--:--</div>
-              <div id="clockDateProfile" class="clockDate">--.--.----</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="profileContent">
-          <div id="coverBox" class="coverBox panel" onclick="openImageViewer('cover')">
-            <div class="coverOverlay">
-              <div class="coverIdentity" onclick="openImageViewer('avatar'); event.stopPropagation();">
-                <div id="profilePic" class="profilePic">
-                  <span id="profilePicText">KF</span>
-                </div>
-
-                <div class="profileNameWrap">
-                  <div id="profileStatus" class="profileStatus">
-                    Hier könnte ihre Werbung stehen. Tut es aber nicht :P
-                  </div>
+              <div class="profileNameWrap">
+                <div id="profileStatus" class="profileStatus">
+                  Hier könnte ihre Werbung stehen. Tut es aber nicht :P
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="profileLowerRow">
-            <div class="profileInfoBox panel">
-              <div id="profileNameBig" class="profileNameBig">Kiki Fox</div>
+        <div class="profileLowerRow">
+          <div class="profileInfoBox panel">
+            <div id="profileNameBig" class="profileNameBig">Kiki Fox</div>
 
-              <div id="foreignProfileActionsBox" class="foreignProfileActionsBox">
+            <div id="foreignProfileActionsBox" class="foreignProfileActionsBox">
+              <button
+                id="foreignAddFriendBtn"
+                class="profileInlineBtn"
+                type="button"
+                onclick="sendFriendRequestToViewedUser()"
+              >
+                Freund hinzufügen
+              </button>
+
+              <button
+                id="foreignMessageBtn"
+                class="profileInlineBtn"
+                type="button"
+                onclick="openChatFromProfile()"
+              >
+                Nachricht
+              </button>
+
+              <div class="foreignProfileMenuWrap">
                 <button
-                  id="foreignAddFriendBtn"
-                  class="profileInlineBtn"
+                  id="foreignProfileGearBtn"
+                  class="profileInlineBtn foreignMiniMenuBtn"
                   type="button"
-                  onclick="sendFriendRequestToViewedUser()"
+                  onclick="toggleForeignProfileMenu()"
+                  title="Optionen"
                 >
-                  Freund hinzufügen
+                  ⋯
                 </button>
 
+                <div
+                  id="foreignProfileMenu"
+                  class="foreignProfileMenu"
+                  onclick="event.stopPropagation()"
+                >
+                  <button
+                    type="button"
+                    onclick="event.stopPropagation(); blockViewedUser()"
+                  >
+                    🚫 Blockieren
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="profileInfoList">
+              <div class="profileInfoItem">
+                <span class="profileInfoLabel">Privatnachrichten</span>
                 <button
-                  id="foreignMessageBtn"
+                  id="profileDmBtn"
                   class="profileInlineBtn"
                   type="button"
                   onclick="openChatFromProfile()"
                 >
                   Nachricht
                 </button>
-
-                <div class="foreignProfileMenuWrap">
-                  <button
-                    id="foreignProfileGearBtn"
-                    class="profileInlineBtn foreignMiniMenuBtn"
-                    type="button"
-                    onclick="toggleForeignProfileMenu()"
-                    title="Optionen"
-                  >
-                    ⋯
-                  </button>
-
-                  <div
-                    id="foreignProfileMenu"
-                    class="foreignProfileMenu"
-                    onclick="event.stopPropagation()"
-                  >
-                    <button
-                      type="button"
-                      onclick="event.stopPropagation(); blockViewedUser()"
-                    >
-                      🚫 Blockieren
-                    </button>
-                  </div>
-                </div>
               </div>
 
-              <div class="profileInfoList">
-                <div class="profileInfoItem">
-                  <span class="profileInfoLabel">Privatnachrichten</span>
-                  <button
-                    id="profileDmBtn"
-                    class="profileInlineBtn"
-                    type="button"
-                    onclick="openChatFromProfile()"
-                  >
-                    Nachricht
-                  </button>
-                </div>
-
-                <div class="profileInfoItem">
-                  <span class="profileInfoLabel">Beziehungsstatus</span>
-                  <span id="relationshipStatusText" class="profileInfoValue">Keine Angabe</span>
-                </div>
-
-                <div id="relationshipPartnerRow" class="profileInfoItem" style="display:none;">
-                  <span class="profileInfoLabel">Partner</span>
-                  <button
-                    id="relationshipPartnerBtn"
-                    class="profileLinkBtn"
-                    type="button"
-                    onclick="openRelationshipPartnerProfile()"
-                  >
-                    Profil öffnen
-                  </button>
-                </div>
-
-                <div id="birthdayRow" class="profileInfoItem" style="display:none;">
-                  <span class="profileInfoLabel">Geburtstag</span>
-                  <span id="birthdayText" class="profileInfoValue"></span>
-                </div>
-
-                <div id="jobRow" class="profileInfoItem" style="display:none;">
-                  <span class="profileInfoLabel">Beruf</span>
-                  <span id="jobText" class="profileInfoValue"></span>
-                </div>
-
-                <div id="aboutRow" class="profileInfoItem" style="display:none;">
-                  <span class="profileInfoLabel">Über mich</span>
-                  <span id="aboutText" class="profileInfoValue"></span>
-                </div>
+              <div class="profileInfoItem">
+                <span class="profileInfoLabel">Beziehungsstatus</span>
+                <span id="relationshipStatusText" class="profileInfoValue">Keine Angabe</span>
               </div>
 
-              <div class="profileInfoActions">
-                <div class="profileSettingsWrap">
-                  <button
-                    id="profileSettingsBtn"
-                    class="profileInfoBtn"
-                    type="button"
-                    onclick="toggleProfileMenu()"
-                    title="Optionen"
-                  >
-                    ⚙ Einstellungen
-                  </button>
-
-                  <div id="profileMenu" class="profileMenu" onclick="event.stopPropagation()">
-                    <button type="button" onclick="event.stopPropagation(); openProfileSection('homeProfile')">
-                      Profile
-                    </button>
-                    <button type="button" onclick="event.stopPropagation(); openProfileSection('avatar')">
-                      Profilbild ändern
-                    </button>
-                    <button type="button" onclick="event.stopPropagation(); openProfileSection('cover')">
-                      Titelbild ändern
-                    </button>
-                    <button type="button" onclick="event.stopPropagation(); openProfileSection('status')">
-                      Status ändern
-                    </button>
-                    <button type="button" onclick="event.stopPropagation(); openProfileSection('infoBox')">
-                      Infobox bearbeiten
-                    </button>
-                    <button type="button" onclick="event.stopPropagation(); openProfileSection('blocklist')">
-                      Blockliste
-                    </button>
-                    <button type="button" onclick="event.stopPropagation(); openProfileSection('deleteAccount')">
-                      Konto löschen
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="profileMainBox panel">
-              <div id="profileFeedHeading" class="profileFeedHeading" style="display:none;"></div>
-              <div id="profilePrivacyBanner" class="profilePrivateBanner" style="display:none;"></div>
-
-              <div class="postCreator" id="profilePostCreator">
-                <input
-                  id="profilePostInput"
-                  type="text"
-                  placeholder="Schreib etwas auf dein Profil..."
-                />
+              <div id="relationshipPartnerRow" class="profileInfoItem" style="display:none;">
+                <span class="profileInfoLabel">Partner</span>
                 <button
+                  id="relationshipPartnerBtn"
+                  class="profileLinkBtn"
                   type="button"
-                  onclick="submitProfilePost()"
+                  onclick="openRelationshipPartnerProfile()"
                 >
-                  Posten
+                  Profil öffnen
                 </button>
               </div>
 
-              <div id="profileFeedPosts" class="postFeed"></div>
+              <div id="birthdayRow" class="profileInfoItem" style="display:none;">
+                <span class="profileInfoLabel">Geburtstag</span>
+                <span id="birthdayText" class="profileInfoValue"></span>
+              </div>
+
+              <div id="jobRow" class="profileInfoItem" style="display:none;">
+                <span class="profileInfoLabel">Beruf</span>
+                <span id="jobText" class="profileInfoValue"></span>
+              </div>
+
+              <div id="aboutRow" class="profileInfoItem" style="display:none;">
+                <span class="profileInfoLabel">Über mich</span>
+                <span id="aboutText" class="profileInfoValue"></span>
+              </div>
             </div>
+
+            <div class="profileInfoActions">
+              <div class="profileSettingsWrap">
+                <button
+                  id="profileSettingsBtn"
+                  class="profileInfoBtn"
+                  type="button"
+                  onclick="toggleProfileMenu()"
+                  title="Optionen"
+                >
+                  ⚙ Einstellungen
+                </button>
+
+                <div id="profileMenu" class="profileMenu" onclick="event.stopPropagation()">
+                  <button type="button" onclick="event.stopPropagation(); openProfileSection('homeProfile')">
+                    Profile
+                  </button>
+                  <button type="button" onclick="event.stopPropagation(); openProfileSection('avatar')">
+                    Profilbild ändern
+                  </button>
+                  <button type="button" onclick="event.stopPropagation(); openProfileSection('cover')">
+                    Titelbild ändern
+                  </button>
+                  <button type="button" onclick="event.stopPropagation(); openProfileSection('status')">
+                    Status ändern
+                  </button>
+                  <button type="button" onclick="event.stopPropagation(); openProfileSection('infoBox')">
+                    Infobox bearbeiten
+                  </button>
+                  <button type="button" onclick="event.stopPropagation(); openProfileSection('blocklist')">
+                    Blockliste
+                  </button>
+                  <button type="button" onclick="event.stopPropagation(); openProfileSection('deleteAccount')">
+                    Konto löschen
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="profileMainBox panel">
+            <div id="profileFeedHeading" class="profileFeedHeading" style="display:none;"></div>
+            <div id="profilePrivacyBanner" class="profilePrivateBanner" style="display:none;"></div>
+
+            <div class="postCreator" id="profilePostCreator">
+              <input
+                id="profilePostInput"
+                type="text"
+                placeholder="Schreib etwas auf dein Profil..."
+              />
+              <button
+                type="button"
+                onclick="submitProfilePost()"
+              >
+                Posten
+              </button>
+            </div>
+
+            <div id="profileFeedPosts" class="postFeed"></div>
           </div>
         </div>
       </div>
     </div>
   </div>
+</div>
 
   <!-- IMAGE VIEWER -->
   <div id="imageViewer" class="imageViewer" onclick="closeImageViewer()">

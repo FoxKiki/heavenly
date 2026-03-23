@@ -869,6 +869,73 @@ select{
   position:relative;
 }
 
+.profileMainLayout{
+  gap:0;
+  min-height:0;
+}
+
+.profileContent{
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  overflow:auto;
+  padding-right:6px;
+  padding-top:0;
+  margin-top:0;
+}
+
+/* Profil-Scrollbar */
+.profileContent{
+  scrollbar-width:thin;
+  scrollbar-color:rgba(139,92,246,0.95) rgba(255,255,255,0.06);
+}
+
+.profileContent::-webkit-scrollbar{
+  width:10px;
+}
+
+.profileContent::-webkit-scrollbar-track{
+  background:rgba(255,255,255,0.05);
+  border-radius:999px;
+}
+
+.profileContent::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg, rgba(139,92,246,0.95), rgba(52,197,241,0.92));
+  border-radius:999px;
+  border:2px solid rgba(10,14,22,0.85);
+}
+
+.profileContent::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(180deg, rgba(155,112,255,1), rgba(88,216,255,1));
+}
+
+/* Sidebar-Scrollbar ebenfalls hübsch */
+.appSidebar{
+  scrollbar-width:thin;
+  scrollbar-color:rgba(139,92,246,0.95) rgba(255,255,255,0.05);
+}
+
+.appSidebar::-webkit-scrollbar{
+  width:10px;
+}
+
+.appSidebar::-webkit-scrollbar-track{
+  background:rgba(255,255,255,0.04);
+  border-radius:999px;
+}
+
+.appSidebar::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg, rgba(139,92,246,0.95), rgba(52,197,241,0.92));
+  border-radius:999px;
+  border:2px solid rgba(10,13,20,0.9);
+}
+
+.appSidebar::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(180deg, rgba(155,112,255,1), rgba(88,216,255,1));
+}
+
 .profileBackFloat{
   min-height:40px;
   padding:0 14px;
@@ -884,16 +951,6 @@ select{
   background:rgba(255,255,255,0.12);
 }
 
-.profileContent{
-  flex:1;
-  min-height:0;
-  display:flex;
-  flex-direction:column;
-  gap:18px;
-  overflow:auto;
-  padding-right:2px;
-}
-
 .coverBox{
   position:relative;
   width:100%;
@@ -905,6 +962,7 @@ select{
   background-size:cover;
   background-position:center;
   background-repeat:no-repeat;
+  margin-top:0;
 }
 
 .coverBox::after{
@@ -1136,11 +1194,9 @@ select{
   box-shadow:
     0 16px 34px rgba(0,0,0,0.42),
     0 0 20px rgba(124,58,237,0.08);
-
   display:flex;
   flex-direction:column;
   gap:8px;
-
   opacity:0;
   transform:translateY(-8px) scale(0.98);
   pointer-events:none;

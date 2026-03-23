@@ -1,8 +1,11 @@
 window.Heavenly = window.Heavenly || {};
 Heavenly.posts = Heavenly.posts || {};
+Heavenly.posts.feedPaging = Heavenly.posts.feedPaging || {};
 
 (function () {
   var STORAGE_KEY = "heavenly_posts";
+  var INITIAL_BATCH = 10;
+  var LOAD_BATCH = 10;
 
   function getCurrentUser() {
     return Heavenly && Heavenly.state ? Heavenly.state.currentUser : null;
@@ -69,6 +72,45 @@ Heavenly.posts = Heavenly.posts || {};
     });
 
     return result;
+  }
+
+  function getPagingKey(feedType, options) {
+    options = options || {};
+
+    if (feedType === "profile") {
+      return "profile:" + normalizeName(options.profileOwner || "");
+    }
+
+    return "home";
+  }
+
+  function ensurePaging(feedType, options) {
+    var key = getPagingKey(feedType, options);
+
+    if (!Heavenly.posts.feedPaging[key]) {
+      Heavenly.posts.feedPaging[key] = {
+        visibleCount: INITIAL_BATCH
+      };
+    }
+
+    return Heavenly.posts.feedPaging[key];
+  }
+
+  function resetFeedPaging(feedType, options) {
+    var key = getPagingKey(feedType, options);
+    Heavenly.posts.feedPaging[key] = {
+      visibleCount: INITIAL_BATCH
+    };
+  }
+
+  function getVisibleCount(feedType, options) {
+    return ensurePaging(feedType, options).visibleCount;
+  }
+
+  function growFeedVisibleCount(feedType, options) {
+    var paging = ensurePaging(feedType, options);
+    paging.visibleCount += LOAD_BATCH;
+    return paging.visibleCount;
   }
 
   function getPosts() {
@@ -304,6 +346,26 @@ Heavenly.posts = Heavenly.posts || {};
     });
   }
 
+  function getVisibleFeedPosts(feedType, options) {
+    var allPosts = getFeedPosts(feedType, options);
+    var visibleCount = getVisibleCount(feedType, options);
+    return allPosts.slice(0, visibleCount);
+  }
+
+  function hasMoreFeedPosts(feedType, options) {
+    var allPosts = getFeedPosts(feedType, options);
+    return getVisibleCount(feedType, options) < allPosts.length;
+  }
+
+  function loadMoreFeedPosts(feedType, options) {
+    if (!hasMoreFeedPosts(feedType, options)) {
+      return false;
+    }
+
+    growFeedVisibleCount(feedType, options);
+    return true;
+  }
+
   Heavenly.posts.store = {
     getPosts: getPosts,
     savePosts: savePosts,
@@ -316,6 +378,10 @@ Heavenly.posts = Heavenly.posts || {};
     deleteComment: deleteComment,
     toggleCommentLike: toggleCommentLike,
     getFeedPosts: getFeedPosts,
+    getVisibleFeedPosts: getVisibleFeedPosts,
+    hasMoreFeedPosts: hasMoreFeedPosts,
+    loadMoreFeedPosts: loadMoreFeedPosts,
+    resetFeedPaging: resetFeedPaging,
     extractMentions: extractMentions
   };
 })();
