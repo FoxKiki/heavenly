@@ -11,6 +11,7 @@ Heavenly.cache.accounts = Heavenly.cache.accounts || null;
   var globalSearchRunId = 0;
   var profileClockMirrorTimer = null;
   var newsEditId = null;
+  var newsComposerState = { media: [] };
 
   function getEl(id) {
     return document.getElementById(id);
@@ -261,7 +262,7 @@ Heavenly.cache.accounts = Heavenly.cache.accounts || null;
   async function renderHomeFeed() {
     if (!Heavenly.posts || !Heavenly.posts.store || !Heavenly.posts.render) return;
 
-    var posts = Heavenly.posts.store.getFeedPosts("home") || [];
+    var posts = await Heavenly.posts.store.getFeedPosts("home") || [];
     var usernames = [];
 
     for (var i = 0; i < posts.length; i++) {
@@ -959,22 +960,119 @@ Heavenly.cache.accounts = Heavenly.cache.accounts || null;
       .replace(/'/g, "&#39;");
   }
 
+  function readFileAsDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file) {
+        reject(new Error("No file selected"));
+        return;
+      }
+
+      var reader = new FileReader();
+
+      reader.onload = function (event) {
+        resolve(event && event.target ? event.target.result : "");
+      };
+
+      reader.onerror = function () {
+        reject(new Error("File could not be read"));
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderNewsMediaPreview() {
+    var preview = getEl("newsMediaPreview");
+    if (!preview) return;
+
+    var media = Array.isArray(newsComposerState.media) ? newsComposerState.media : [];
+    preview.innerHTML = "";
+
+    if (!media.length) {
+      preview.style.display = "none";
+      return;
+    }
+
+    preview.style.display = "flex";
+
+    media.forEach(function (src, index) {
+      var item = document.createElement("div");
+      item.className = "newsMediaPreviewItem";
+
+      var img = document.createElement("img");
+      img.className = "newsMediaPreviewImage";
+      img.src = src;
+      img.alt = "News Medien";
+      img.loading = "lazy";
+
+      var removeBtn = document.createElement("button");
+      removeBtn.className = "newsMediaPreviewRemove";
+      removeBtn.type = "button";
+      removeBtn.innerText = "x";
+      removeBtn.onclick = function () {
+        newsComposerState.media.splice(index, 1);
+        renderNewsMediaPreview();
+      };
+
+      item.appendChild(img);
+      item.appendChild(removeBtn);
+      preview.appendChild(item);
+    });
+  }
+
+  async function addFilesToNewsComposer(files) {
+    var list = Array.prototype.slice.call(files || []);
+
+    for (var i = 0; i < list.length; i++) {
+      var file = list[i];
+      if (!file || !file.type || file.type.indexOf("image/") !== 0) {
+        continue;
+      }
+
+      try {
+        newsComposerState.media.push(await readFileAsDataUrl(file));
+      } catch (error) {
+        console.error("News image read failed", error);
+      }
+
+      if (newsComposerState.media.length >= 6) {
+        break;
+      }
+    }
+
+    newsComposerState.media = newsComposerState.media.slice(0, 6);
+    renderNewsMediaPreview();
+  }
+
+  function renderNewsMediaGallery(media) {
+    var items = Array.isArray(media) ? media.filter(Boolean) : [];
+    if (!items.length) return "";
+
+    return '<div class="newsItemMedia">' + items.map(function (src) {
+      return '<img class="newsItemMediaImage" src="' + escapeHtml(src) + '" alt="News Bild" loading="lazy" />';
+    }).join("") + '</div>';
+  }
+
   function getNewsEditorPayload() {
     return {
       title: getEl("newsTitleInput") ? getEl("newsTitleInput").value.trim() : "",
       category: getEl("newsCategoryInput") ? getEl("newsCategoryInput").value.trim() : "",
-      content: getEl("newsContentInput") ? getEl("newsContentInput").value.trim() : ""
+      content: getEl("newsContentInput") ? getEl("newsContentInput").value.trim() : "",
+      media: Array.isArray(newsComposerState.media) ? newsComposerState.media.slice(0, 6) : []
     };
   }
 
   function resetNewsEditor() {
     newsEditId = null;
+    newsComposerState.media = [];
 
     if (getEl("newsTitleInput")) getEl("newsTitleInput").value = "";
     if (getEl("newsCategoryInput")) getEl("newsCategoryInput").value = "";
     if (getEl("newsContentInput")) getEl("newsContentInput").value = "";
     if (getEl("newsSubmitBtn")) getEl("newsSubmitBtn").innerText = "News veröffentlichen";
     if (getEl("newsCancelEditBtn")) getEl("newsCancelEditBtn").style.display = "none";
+    if (getEl("newsImageInput")) getEl("newsImageInput").value = "";
+    renderNewsMediaPreview();
   }
 
   async function renderNewsPanel() {
@@ -1029,6 +1127,7 @@ Heavenly.cache.accounts = Heavenly.cache.accounts || null;
             actions ? '<div class="newsItemActions">' + actions + '</div>' : '',
           '</div>',
           '<div class="newsItemContent">', escapeHtml(item.content || ""), '</div>',
+          renderNewsMediaGallery(item.media),
         '</div>'
       ].join("");
     }).join("");
@@ -1054,6 +1153,28 @@ Heavenly.cache.accounts = Heavenly.cache.accounts || null;
 
   window.openNews = function () {
     openNewsPanel();
+  };
+
+  window.openNewsImagePicker = function () {
+    var input = getEl("newsImageInput");
+    if (input) {
+      input.click();
+    }
+  };
+
+  window.openNewsEmojiPicker = function () {
+    if (typeof window.openEmojiPicker !== "function") return;
+
+    window.openEmojiPicker("newsContentInput", {
+      mode: "post",
+      onEmoteSelect: function (emote) {
+        if (!emote || !emote.src) return;
+
+        newsComposerState.media.push(emote.src);
+        newsComposerState.media = newsComposerState.media.slice(0, 6);
+        renderNewsMediaPreview();
+      }
+    });
   };
 
   window.submitNewsPost = async function () {
@@ -1102,6 +1223,8 @@ Heavenly.cache.accounts = Heavenly.cache.accounts || null;
     if (getEl("newsTitleInput")) getEl("newsTitleInput").value = item.title || "";
     if (getEl("newsCategoryInput")) getEl("newsCategoryInput").value = item.category || "";
     if (getEl("newsContentInput")) getEl("newsContentInput").value = item.content || "";
+    newsComposerState.media = Array.isArray(item.media) ? item.media.slice(0, 6) : [];
+    renderNewsMediaPreview();
     if (getEl("newsSubmitBtn")) getEl("newsSubmitBtn").innerText = "News speichern";
     if (getEl("newsCancelEditBtn")) getEl("newsCancelEditBtn").style.display = "inline-flex";
   };
@@ -1141,5 +1264,15 @@ Heavenly.cache.accounts = Heavenly.cache.accounts || null;
     if (!wrap.contains(event.target)) {
       window.closeGlobalSearchPopup();
     }
+  });
+
+  document.addEventListener("change", function (event) {
+    if (!event.target || event.target.id !== "newsImageInput") return;
+
+    var input = event.target;
+
+    Promise.resolve(addFilesToNewsComposer(input.files)).finally(function () {
+      input.value = "";
+    });
   });
 })();

@@ -1,4 +1,5 @@
 local uiOpen = false
+local pushHeavenlyClock
 
 local function hasLbTablet()
     return GetResourceState("lb-tablet") == "started"
@@ -14,12 +15,42 @@ local function setUi(state, payload)
         action = state and "open" or "close",
         payload = payload or {}
     })
+
+    if state then
+        pushHeavenlyClock()
+    end
 end
 
 local function triggerServerCallback(name, cb, ...)
     ESX.TriggerServerCallback(name, function(result)
         cb(result)
     end, ...)
+end
+
+local function getHeavenlyClockTimestamp()
+    local year = GetClockYear()
+    local month = GetClockMonth() + 1
+    local day = GetClockDayOfMonth()
+    local hour = GetClockHours()
+    local minute = GetClockMinutes()
+    local second = GetClockSeconds()
+
+    return os.time({
+        year = year,
+        month = month,
+        day = day,
+        hour = hour,
+        min = minute,
+        sec = second
+    }) * 1000
+end
+
+pushHeavenlyClock = function()
+    SendNUIMessage({
+        action = "heavenly:setClock",
+        mode = "server",
+        serverTime = getHeavenlyClockTimestamp()
+    })
 end
 
 RegisterCommand("heavenly", function()
@@ -133,4 +164,51 @@ end)
 
 RegisterNUICallback("deleteNews", function(data, cb)
     triggerServerCallback("heavenly:deleteNews", cb, data and data.id)
+end)
+
+RegisterNUICallback("getPosts", function(data, cb)
+    triggerServerCallback("heavenly:getPosts", cb, data and data.feedType, data and data.profileOwner)
+end)
+
+RegisterNUICallback("createPost", function(data, cb)
+    triggerServerCallback("heavenly:createPost", cb, data or {})
+end)
+
+RegisterNUICallback("editPost", function(data, cb)
+    triggerServerCallback("heavenly:editPost", cb, data and data.postId, data and data.text)
+end)
+
+RegisterNUICallback("deletePost", function(data, cb)
+    triggerServerCallback("heavenly:deletePost", cb, data and data.postId)
+end)
+
+RegisterNUICallback("togglePostLike", function(data, cb)
+    triggerServerCallback("heavenly:togglePostLike", cb, data and data.postId)
+end)
+
+RegisterNUICallback("addComment", function(data, cb)
+    triggerServerCallback("heavenly:addComment", cb, data and data.postId, data or {})
+end)
+
+RegisterNUICallback("editComment", function(data, cb)
+    triggerServerCallback("heavenly:editComment", cb, data and data.postId, data and data.commentId, data and data.text)
+end)
+
+RegisterNUICallback("deleteComment", function(data, cb)
+    triggerServerCallback("heavenly:deleteComment", cb, data and data.postId, data and data.commentId)
+end)
+
+RegisterNUICallback("toggleCommentLike", function(data, cb)
+    triggerServerCallback("heavenly:toggleCommentLike", cb, data and data.postId, data and data.commentId)
+end)
+
+CreateThread(function()
+    while true do
+        if uiOpen then
+            pushHeavenlyClock()
+            Wait(1000)
+        else
+            Wait(1500)
+        end
+    end
 end)

@@ -759,7 +759,7 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
       return;
     }
 
-    var posts = Heavenly.posts.store.getFeedPosts("profile", {
+    var posts = await Heavenly.posts.store.getFeedPosts("profile", {
       profileOwner: profileOwner
     });
 

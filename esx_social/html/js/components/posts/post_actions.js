@@ -2,31 +2,31 @@ window.Heavenly = window.Heavenly || {};
 Heavenly.posts = Heavenly.posts || {};
 
 (function () {
-  function rerenderFeed(feedType, options) {
+  async function rerenderFeed(feedType, options) {
     if (feedType === "profile") {
       if (Heavenly.screens && typeof Heavenly.screens.renderProfileFeed === "function") {
-        Heavenly.screens.renderProfileFeed(options || {});
+        await Heavenly.screens.renderProfileFeed(options || {});
       }
       return;
     }
 
     if (Heavenly.screens && typeof Heavenly.screens.renderHomeFeed === "function") {
-      Heavenly.screens.renderHomeFeed();
+      await Heavenly.screens.renderHomeFeed();
     }
   }
 
-  function toggleLike(postId, feedType, options) {
+  async function toggleLike(postId, feedType, options) {
     if (!Heavenly.posts || !Heavenly.posts.store) return;
 
-    Heavenly.posts.store.toggleLike(postId);
-    rerenderFeed(feedType, options);
+    await Heavenly.posts.store.toggleLike(postId);
+    await rerenderFeed(feedType, options);
   }
 
-  function toggleCommentLike(postId, commentId, feedType, options) {
+  async function toggleCommentLike(postId, commentId, feedType, options) {
     if (!Heavenly.posts || !Heavenly.posts.store) return;
 
-    Heavenly.posts.store.toggleCommentLike(postId, commentId);
-    rerenderFeed(feedType, options);
+    await Heavenly.posts.store.toggleCommentLike(postId, commentId);
+    await rerenderFeed(feedType, options);
   }
 
   async function submitComment(postId, inputId, feedType, options) {
@@ -58,7 +58,7 @@ Heavenly.posts = Heavenly.posts || {};
       images = Heavenly.posts.render.ensureCommentComposerState(inputId).images.slice();
     }
 
-    var comment = Heavenly.posts.store.addComment(postId, text, images);
+    var comment = await Heavenly.posts.store.addComment(postId, text, images);
     if (!comment) return;
 
     if (
@@ -71,43 +71,43 @@ Heavenly.posts = Heavenly.posts || {};
       input.style.height = "auto";
     }
 
-    rerenderFeed(feedType, options);
+    await rerenderFeed(feedType, options);
   }
 
-  function editPost(postId, nextText, feedType, options) {
+  async function editPost(postId, nextText, feedType, options) {
     if (!Heavenly.posts || !Heavenly.posts.store) return;
     if (nextText === null || nextText === undefined) return;
 
     nextText = String(nextText).trim();
     if (!nextText) return;
 
-    Heavenly.posts.store.editPost(postId, nextText);
-    rerenderFeed(feedType, options);
+    await Heavenly.posts.store.editPost(postId, nextText);
+    await rerenderFeed(feedType, options);
   }
 
-  function deletePost(postId, feedType, options) {
+  async function deletePost(postId, feedType, options) {
     if (!Heavenly.posts || !Heavenly.posts.store) return;
 
-    Heavenly.posts.store.deletePost(postId);
-    rerenderFeed(feedType, options);
+    await Heavenly.posts.store.deletePost(postId);
+    await rerenderFeed(feedType, options);
   }
 
-  function editComment(postId, commentId, nextText, feedType, options) {
+  async function editComment(postId, commentId, nextText, feedType, options) {
     if (!Heavenly.posts || !Heavenly.posts.store) return;
     if (nextText === null || nextText === undefined) return;
 
     nextText = String(nextText).trim();
     if (!nextText) return;
 
-    Heavenly.posts.store.editComment(postId, commentId, nextText);
-    rerenderFeed(feedType, options);
+    await Heavenly.posts.store.editComment(postId, commentId, nextText);
+    await rerenderFeed(feedType, options);
   }
 
-  function deleteComment(postId, commentId, feedType, options) {
+  async function deleteComment(postId, commentId, feedType, options) {
     if (!Heavenly.posts || !Heavenly.posts.store) return;
 
-    Heavenly.posts.store.deleteComment(postId, commentId);
-    rerenderFeed(feedType, options);
+    await Heavenly.posts.store.deleteComment(postId, commentId);
+    await rerenderFeed(feedType, options);
   }
 
   Heavenly.posts.actions = {

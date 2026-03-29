@@ -454,6 +454,7 @@ Heavenly.api = (function () {
       title: String(payload && payload.title || "").trim(),
       content: String(payload && payload.content || "").trim(),
       category: String(payload && payload.category || "Allgemein").trim() || "Allgemein",
+      media: Array.isArray(payload && payload.media) ? payload.media.slice(0, 6) : [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
@@ -483,6 +484,7 @@ Heavenly.api = (function () {
         title: String(payload && payload.title || "").trim(),
         content: String(payload && payload.content || "").trim(),
         category: String(payload && payload.category || "Allgemein").trim() || "Allgemein",
+        media: Array.isArray(payload && payload.media) ? payload.media.slice(0, 6) : [],
         updatedAt: new Date().toISOString()
       });
     });
@@ -717,6 +719,64 @@ Heavenly.api = (function () {
     }));
   }
 
+  async function fivemGetPosts(feedType, profileOwner) {
+    return unwrapNuiResult(await nuiPost("getPosts", {
+      feedType: feedType,
+      profileOwner: profileOwner || null
+    }));
+  }
+
+  async function fivemCreatePost(payload) {
+    return unwrapNuiResult(await nuiPost("createPost", payload || {}));
+  }
+
+  async function fivemEditPost(postId, text) {
+    return unwrapNuiResult(await nuiPost("editPost", {
+      postId: postId,
+      text: text
+    }));
+  }
+
+  async function fivemDeletePost(postId) {
+    return unwrapNuiResult(await nuiPost("deletePost", {
+      postId: postId
+    }));
+  }
+
+  async function fivemTogglePostLike(postId) {
+    return unwrapNuiResult(await nuiPost("togglePostLike", {
+      postId: postId
+    }));
+  }
+
+  async function fivemAddComment(postId, payload) {
+    return unwrapNuiResult(await nuiPost("addComment", Object.assign({}, payload || {}, {
+      postId: postId
+    })));
+  }
+
+  async function fivemEditComment(postId, commentId, text) {
+    return unwrapNuiResult(await nuiPost("editComment", {
+      postId: postId,
+      commentId: commentId,
+      text: text
+    }));
+  }
+
+  async function fivemDeleteComment(postId, commentId) {
+    return unwrapNuiResult(await nuiPost("deleteComment", {
+      postId: postId,
+      commentId: commentId
+    }));
+  }
+
+  async function fivemToggleCommentLike(postId, commentId) {
+    return unwrapNuiResult(await nuiPost("toggleCommentLike", {
+      postId: postId,
+      commentId: commentId
+    }));
+  }
+
   function register(username, password, passwordRepeat) {
     return isFiveM()
       ? fivemRegister(username, password, passwordRepeat)
@@ -851,6 +911,60 @@ Heavenly.api = (function () {
       : localDeleteNews(id);
   }
 
+  function getPosts(feedType, profileOwner) {
+    return isFiveM()
+      ? fivemGetPosts(feedType, profileOwner)
+      : fail("Posts API nur im FiveM-Modus verfügbar");
+  }
+
+  function createPost(payload) {
+    return isFiveM()
+      ? fivemCreatePost(payload)
+      : fail("Posts API nur im FiveM-Modus verfügbar");
+  }
+
+  function editPost(postId, text) {
+    return isFiveM()
+      ? fivemEditPost(postId, text)
+      : fail("Posts API nur im FiveM-Modus verfügbar");
+  }
+
+  function deletePost(postId) {
+    return isFiveM()
+      ? fivemDeletePost(postId)
+      : fail("Posts API nur im FiveM-Modus verfügbar");
+  }
+
+  function togglePostLike(postId) {
+    return isFiveM()
+      ? fivemTogglePostLike(postId)
+      : fail("Posts API nur im FiveM-Modus verfügbar");
+  }
+
+  function addComment(postId, payload) {
+    return isFiveM()
+      ? fivemAddComment(postId, payload)
+      : fail("Posts API nur im FiveM-Modus verfügbar");
+  }
+
+  function editComment(postId, commentId, text) {
+    return isFiveM()
+      ? fivemEditComment(postId, commentId, text)
+      : fail("Posts API nur im FiveM-Modus verfügbar");
+  }
+
+  function deleteComment(postId, commentId) {
+    return isFiveM()
+      ? fivemDeleteComment(postId, commentId)
+      : fail("Posts API nur im FiveM-Modus verfügbar");
+  }
+
+  function toggleCommentLike(postId, commentId) {
+    return isFiveM()
+      ? fivemToggleCommentLike(postId, commentId)
+      : fail("Posts API nur im FiveM-Modus verfügbar");
+  }
+
   return {
     register: register,
     login: login,
@@ -872,6 +986,15 @@ Heavenly.api = (function () {
     getNews: getNews,
     createNews: createNews,
     updateNews: updateNews,
-    deleteNews: deleteNews
+    deleteNews: deleteNews,
+    getPosts: getPosts,
+    createPost: createPost,
+    editPost: editPost,
+    deletePost: deletePost,
+    togglePostLike: togglePostLike,
+    addComment: addComment,
+    editComment: editComment,
+    deleteComment: deleteComment,
+    toggleCommentLike: toggleCommentLike
   };
 })();

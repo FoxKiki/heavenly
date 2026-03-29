@@ -332,7 +332,7 @@ Heavenly.posts = Heavenly.posts || {};
     creator.dataset.heavenlyComposerReady = "1";
   }
 
-  function submitPost(config) {
+  async function submitPost(config) {
     config = config || {};
 
     var input = getEl(config.inputId);
@@ -347,7 +347,7 @@ Heavenly.posts = Heavenly.posts || {};
 
     if (!text && !images.length) return;
 
-    var created = Heavenly.posts.store.createPost({
+    var created = await Heavenly.posts.store.createPost({
       author: currentUser,
       text: text,
       feedType: config.feedType || "home",
@@ -362,13 +362,13 @@ Heavenly.posts = Heavenly.posts || {};
 
     if (config.feedType === "profile") {
       if (Heavenly.screens && typeof Heavenly.screens.renderProfileFeed === "function") {
-        Heavenly.screens.renderProfileFeed({ profileOwner: config.profileOwner });
+        await Heavenly.screens.renderProfileFeed({ profileOwner: config.profileOwner });
       }
       return;
     }
 
     if (Heavenly.screens && typeof Heavenly.screens.renderHomeFeed === "function") {
-      Heavenly.screens.renderHomeFeed();
+      await Heavenly.screens.renderHomeFeed();
     }
   }
 

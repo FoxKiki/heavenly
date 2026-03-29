@@ -1653,6 +1653,52 @@ select{
   padding:14px 16px;
 }
 
+.newsComposerTools{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.newsMediaPreview{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.newsMediaPreviewItem{
+  position:relative;
+  width:92px;
+  height:92px;
+  border-radius:16px;
+  overflow:hidden;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+}
+
+.newsMediaPreviewImage{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.newsMediaPreviewRemove{
+  position:absolute;
+  top:6px;
+  right:6px;
+  width:26px !important;
+  min-width:26px !important;
+  height:26px;
+  padding:0;
+  border:none;
+  border-radius:999px;
+  background:rgba(6,10,18,0.84);
+  color:white;
+  cursor:pointer;
+  font-size:14px;
+  line-height:1;
+}
+
 .newsComposerActions{
   display:flex;
   gap:10px;
@@ -1761,6 +1807,24 @@ select{
   line-height:1.55;
   white-space:pre-wrap;
   word-break:break-word;
+}
+
+.newsItemMedia{
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:10px;
+}
+
+.newsItemMediaImage{
+  width:100%;
+  min-height:140px;
+  max-height:280px;
+  object-fit:cover;
+  border-radius:16px;
+  display:block;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
 }
 
 .dmFriendsColumn,

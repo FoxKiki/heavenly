@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
@@ -42,22 +42,22 @@
 
         <nav class="sidebarNav">
           <button class="sidebarNavBtn active" type="button" onclick="closeProfile()">
-            <span class="sidebarNavIcon">⌂</span>
+            <span class="sidebarNavIcon">&#8962;</span>
             <span class="sidebarNavText">Home</span>
           </button>
 
           <button class="sidebarNavBtn" type="button" onclick="openProfile()">
-            <span class="sidebarNavIcon">👤</span>
+            <span class="sidebarNavIcon">&#128100;</span>
             <span class="sidebarNavText">Profil</span>
           </button>
 
           <button class="sidebarNavBtn" type="button" onclick="openDMs()">
-            <span class="sidebarNavIcon">✉</span>
+            <span class="sidebarNavIcon">&#9993;</span>
             <span class="sidebarNavText">Nachrichten</span>
           </button>
 
           <button class="sidebarNavBtn" type="button" onclick="openNews()">
-            <span class="sidebarNavIcon">✦</span>
+            <span class="sidebarNavIcon">&#10022;</span>
             <span class="sidebarNavText">News</span>
           </button>
         </nav>
@@ -135,7 +135,7 @@
               <input
                 id="homePostInput"
                 type="text"
-                placeholder="Was gibt es neues?"
+                placeholder="Was möchtest du posten?"
               />
 
               <button
@@ -175,41 +175,88 @@
   <div id="profileScreen" class="profileScreen screen">
     <input id="avatarUploadInput" type="file" accept="image/*" hidden />
     <input id="coverUploadInput" type="file" accept="image/*" hidden />
+    <input id="profileBgUploadInput" type="file" accept="image/*" hidden />
 
     <div class="appShell profileShell">
       <aside class="appSidebar">
         <div class="sidebarTop">
           <div class="sidebarLogo">
-            <span class="sidebarLogoDot"></span>
-            <span class="sidebarLogoText">Heavenly</span>
+            <img
+              src="assets/logos/heavenlylogo.png"
+              alt="Heavenly"
+              class="sidebarLogoImg"
+            />
           </div>
         </div>
 
         <nav class="sidebarNav">
           <button class="sidebarNavBtn" type="button" onclick="closeProfile()">
-            <span class="sidebarNavIcon">⌂</span>
+            <span class="sidebarNavIcon">&#8962;</span>
             <span class="sidebarNavText">Home</span>
           </button>
 
-          <button class="sidebarNavBtn active" type="button" onclick="openProfile()">
-            <span class="sidebarNavIcon">👤</span>
-            <span class="sidebarNavText">Profil</span>
+          <button id="profileSidebarBlocklistBtn" class="sidebarNavBtn active" type="button" onclick="openBlocklistPopup()">
+            <span class="sidebarNavIcon">&#9940;</span>
+            <span class="sidebarNavText">Blockliste</span>
           </button>
 
           <button class="sidebarNavBtn" type="button" onclick="openDMs()">
-            <span class="sidebarNavIcon">✉</span>
+            <span class="sidebarNavIcon">&#9993;</span>
             <span class="sidebarNavText">Nachrichten</span>
           </button>
 
           <button class="sidebarNavBtn" type="button" onclick="openNews()">
-            <span class="sidebarNavIcon">✦</span>
+            <span class="sidebarNavIcon">&#10022;</span>
             <span class="sidebarNavText">News</span>
           </button>
         </nav>
 
+        <div id="profileSidebarActions" class="profileSidebarActions">
+          <div class="profileSidebarSectionTitle">Profil</div>
+
+          <button
+            id="profileSidebarEditBtn"
+            class="sidebarNavBtn profileSidebarActionBtn"
+            type="button"
+            onclick="openProfileEditorPopup()"
+          >
+            <span class="sidebarNavIcon">&#9998;</span>
+            <span class="sidebarNavText">Bearbeiten</span>
+          </button>
+
+          <div class="profileSidebarQuickGrid">
+            <button
+              class="sidebarNavBtn profileSidebarActionBtn"
+              type="button"
+              onclick="openProfileSection('avatar')"
+            >
+              <span class="sidebarNavIcon">&#128100;</span>
+              <span class="sidebarNavText">Profilbild</span>
+            </button>
+
+            <button
+              class="sidebarNavBtn profileSidebarActionBtn"
+              type="button"
+              onclick="openProfileSection('cover')"
+            >
+              <span class="sidebarNavIcon">&#128444;</span>
+              <span class="sidebarNavText">Titelbild</span>
+            </button>
+
+            <button
+              class="sidebarNavBtn profileSidebarActionBtn"
+              type="button"
+              onclick="openProfileSection('profileBg')"
+            >
+              <span class="sidebarNavIcon">&#10024;</span>
+              <span class="sidebarNavText">Hintergrund</span>
+            </button>
+          </div>
+        </div>
+
         <div class="sidebarBottom">
           <button class="sidebarNavBtn" type="button" onclick="closeProfile()">
-            <span class="sidebarNavIcon">←</span>
+            <span class="sidebarNavIcon">&#8592;</span>
             <span class="sidebarNavText">Zurück</span>
           </button>
         </div>
@@ -229,6 +276,7 @@
                     Hier könnte ihre Werbung stehen. Tut es aber nicht :P
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
@@ -262,7 +310,6 @@
                     class="profileInlineBtn foreignMiniMenuBtn"
                     type="button"
                     onclick="toggleForeignProfileMenu()"
-                    title="Optionen"
                   >
                     ⋯
                   </button>
@@ -283,18 +330,6 @@
               </div>
 
               <div class="profileInfoList">
-                <div class="profileInfoItem">
-                  <span class="profileInfoLabel">Privatnachrichten</span>
-                  <button
-                    id="profileDmBtn"
-                    class="profileInlineBtn"
-                    type="button"
-                    onclick="openChatFromProfile()"
-                  >
-                    Nachricht
-                  </button>
-                </div>
-
                 <div class="profileInfoItem">
                   <span class="profileInfoLabel">Beziehungsstatus</span>
                   <span id="relationshipStatusText" class="profileInfoValue">Keine Angabe</span>
@@ -334,7 +369,7 @@
                     id="profileSettingsBtn"
                     class="profileInfoBtn"
                     type="button"
-                    onclick="toggleProfileMenu()"
+                    onclick="openProfileEditorPopup()"
                     title="Optionen"
                   >
                     ⚙ Einstellungen
@@ -363,6 +398,30 @@
                       Konto löschen
                     </button>
                   </div>
+                </div>
+
+                <div id="profileQuickActions" class="profileQuickActions">
+                  <button
+                    class="profileInlineBtn"
+                    type="button"
+                    onclick="openProfileSection('avatar')"
+                  >
+                    Profilbild
+                  </button>
+                  <button
+                    class="profileInlineBtn"
+                    type="button"
+                    onclick="openProfileSection('cover')"
+                  >
+                    Titelbild
+                  </button>
+                  <button
+                    class="profileInlineBtn"
+                    type="button"
+                    onclick="openProfileSection('profileBg')"
+                  >
+                    Hintergrund
+                  </button>
                 </div>
               </div>
             </div>
@@ -459,6 +518,36 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="newsPanel" class="dmPanel" onclick="closeNewsPanel()">
+    <div class="dmPanelBox dmPanelBoxLarge newsPanelBox" onclick="event.stopPropagation()">
+      <div class="dmPanelHeader">
+        <div class="dmPanelTitle">News</div>
+        <button class="dmCloseBtn" type="button" onclick="closeNewsPanel()">✕</button>
+      </div>
+
+      <div class="newsPanelBody">
+        <div id="newsComposer" class="newsComposer" style="display:none;">
+          <input id="newsTitleInput" type="text" maxlength="120" placeholder="Überschrift" />
+          <input id="newsCategoryInput" type="text" maxlength="60" placeholder="Kategorie oder Bereich" />
+          <textarea id="newsContentInput" class="newsContentInput" maxlength="2000" placeholder="Was gibt es Neues?"></textarea>
+          <input id="newsImageInput" type="file" accept="image/*" multiple hidden />
+          <div class="newsComposerTools">
+            <button id="newsImageBtn" class="dmToolBtn" type="button" onclick="openNewsImagePicker()" title="Bild hinzufügen">🖼</button>
+            <button id="newsEmojiBtn" class="dmToolBtn" type="button" onclick="openNewsEmojiPicker()" title="Emoji / Emotes">😊</button>
+          </div>
+          <div id="newsMediaPreview" class="newsMediaPreview" style="display:none;"></div>
+          <div class="newsComposerActions">
+            <button id="newsSubmitBtn" type="button" onclick="submitNewsPost()">News veröffentlichen</button>
+            <button id="newsCancelEditBtn" class="close" type="button" onclick="cancelNewsEdit()" style="display:none;">Bearbeiten abbrechen</button>
+          </div>
+        </div>
+
+        <div id="newsAccessHint" class="newsAccessHint" style="display:none;"></div>
+        <div id="newsFeedList" class="newsFeedList"></div>
       </div>
     </div>
   </div>
@@ -577,13 +666,168 @@
 
       <label class="hpField">
         <span>Profil Hintergrundbild</span>
-        <input id="hpProfileBg" type="text" placeholder="https://..." />
+        <input id="hpProfileBg" type="hidden" value="" />
+        <input id="hpProfileBgFile" type="file" accept="image/*" hidden />
+        <input
+          id="hpProfileBgName"
+          type="text"
+          value="Kein Bild ausgewählt"
+          readonly
+        />
+        <div class="hpInlineActions">
+          <button type="button" onclick="chooseProfileBackgroundFile()">Bild auswählen</button>
+          <button type="button" onclick="clearProfileBackgroundFile()">Bild entfernen</button>
+        </div>
       </label>
 
       <div class="hpActions">
         <button type="button" onclick="saveHomeProfileSettings()">Speichern</button>
         <button type="button" onclick="resetHomeProfileSettings()">Zurücksetzen</button>
         <button class="close" type="button" onclick="closeHomeProfilePopup()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="profileEditorPopup" class="popup">
+    <div class="popup-box homeProfilePopupBox">
+      <h2>Profil bearbeiten</h2>
+
+      <div class="profileEditorSection">
+        <div class="profileEditorSectionTitle">Bilder</div>
+        <div class="hpInlineActions hpInlineActionsWide">
+          <button type="button" onclick="openProfileSection('avatar')">Profilbild ändern</button>
+          <button type="button" onclick="openProfileSection('cover')">Titelbild ändern</button>
+        </div>
+      </div>
+
+      <div class="profileEditorSection">
+        <div class="profileEditorSectionTitle">Profiltext</div>
+
+        <label class="hpField">
+          <span>Status</span>
+          <input
+            id="peStatusInput"
+            type="text"
+            placeholder="Was sollen andere direkt über dir lesen?"
+            maxlength="120"
+          />
+        </label>
+
+        <label class="hpField">
+          <span>Profil-Überschrift</span>
+          <input
+            id="peProfileFeedTitle"
+            type="text"
+            placeholder="z. B. Meine Pinnwand"
+            maxlength="60"
+          />
+        </label>
+
+        <label class="hpField">
+          <span>Über mich</span>
+          <input
+            id="peAbout"
+            type="text"
+            placeholder="Ein kleiner Text über dich"
+            maxlength="160"
+          />
+        </label>
+      </div>
+
+      <div class="profileEditorSection">
+        <div class="profileEditorSectionTitle">Infos</div>
+
+        <label class="hpField">
+          <span>Beziehungsstatus</span>
+          <select id="peRelationshipStatus">
+            <option value="">Keine Angabe</option>
+            <option value="single">Single</option>
+            <option value="in_relationship">In einer Beziehung</option>
+            <option value="married">Verheiratet</option>
+            <option value="complicated">Es ist kompliziert</option>
+          </select>
+        </label>
+
+        <label class="hpField">
+          <span>Partnername (optional)</span>
+          <input id="peRelationshipPartner" type="text" placeholder="z. B. mccy" />
+        </label>
+
+        <label class="hpField">
+          <span>Geburtstag</span>
+          <input id="peBirthday" type="text" placeholder="z. B. 14.02.2000" />
+        </label>
+
+        <label class="hpField">
+          <span>Beruf</span>
+          <input id="peJob" type="text" placeholder="z. B. Parkerin" />
+        </label>
+
+        <label class="hpField">
+          <span>Profil-Sichtbarkeit</span>
+          <select id="peProfileVisibility">
+            <option value="public">Öffentlich</option>
+            <option value="friends">Nur Freunde</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="profileEditorSection">
+        <div class="profileEditorSectionTitle">Design</div>
+
+        <label class="hpField">
+          <span>Box-Farbe</span>
+          <input id="peBoxColor" type="color" value="#8b5cf6" />
+        </label>
+
+        <label class="hpField">
+          <span>Box-Innenfarbe</span>
+          <input id="pePanelColor" type="color" value="#4b0010" />
+        </label>
+
+        <label class="hpField">
+          <span>Text-Farbe</span>
+          <input id="peTextColor" type="color" value="#ffffff" />
+        </label>
+
+        <label class="hpField">
+          <span>Schriftart</span>
+          <select id="peFontFamily">
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+            <option value="'Segoe UI', sans-serif">Segoe UI</option>
+            <option value="'Verdana', sans-serif">Verdana</option>
+            <option value="'Georgia', serif">Georgia</option>
+            <option value="'Palatino Linotype','Book Antiqua',Palatino,serif">Palatino</option>
+          </select>
+        </label>
+
+        <label class="hpField">
+          <span>Profil Hintergrundbild</span>
+          <input id="peProfileBg" type="hidden" value="" />
+          <input id="peProfileBgFile" type="file" accept="image/*" hidden />
+          <input
+            id="peProfileBgName"
+            type="text"
+            value="Kein Bild ausgewählt"
+            readonly
+          />
+          <div class="hpInlineActions">
+            <button type="button" onclick="chooseProfileEditorBackgroundFile()">Bild auswählen</button>
+            <button type="button" onclick="clearProfileEditorBackgroundFile()">Bild entfernen</button>
+          </div>
+        </label>
+      </div>
+
+      <div class="profileEditorDangerZone">
+        <button class="close" type="button" onclick="openBlocklistPopup()">Blockliste öffnen</button>
+        <button class="close" type="button" onclick="openProfileSection('deleteAccount')">Konto löschen</button>
+      </div>
+
+      <div class="hpActions">
+        <button type="button" onclick="saveProfileEditorSettings()">Alles speichern</button>
+        <button type="button" onclick="resetProfileEditorDesign()">Design zurücksetzen</button>
+        <button class="close" type="button" onclick="closeProfileEditorPopup()">Abbrechen</button>
       </div>
     </div>
   </div>
@@ -657,7 +901,9 @@
   <script src="js/core/state.js"></script>
   <script src="js/core/env.js"></script>
   <script src="js/core/api.js"></script>
+  <script src="js/core/close.js"></script>
   <script src="js/core/overlay.js"></script>
+  <script src="js/dev/reset_preview.js"></script>
 
   <script src="js/components/fortune_list.js"></script>
   <script src="js/components/fortune.js"></script>

@@ -183,20 +183,55 @@ ESX.RegisterServerCallback("heavenly:deleteAccount", function(source, cb)
             ["@identifier"] = account.identifier
         }, function()
             MySQL.Async.execute([[
-                DELETE FROM heavenly_accounts
-                WHERE LOWER(username) = LOWER(@username)
+                DELETE FROM heavenly_post_comments
+                WHERE author_identifier = @identifier
             ]], {
-                ["@username"] = account.username
+                ["@identifier"] = account.identifier
             }, function()
-                HeavenlySessions[source] = nil
+                MySQL.Async.execute([[
+                    DELETE FROM heavenly_post_comments
+                    WHERE post_id IN (
+                        SELECT id FROM heavenly_posts
+                        WHERE author_identifier = @identifier
+                           OR LOWER(profile_owner_username) = LOWER(@username)
+                    )
+                ]], {
+                    ["@identifier"] = account.identifier,
+                    ["@username"] = account.username
+                }, function()
+                    MySQL.Async.execute([[
+                        DELETE FROM heavenly_posts
+                        WHERE author_identifier = @identifier
+                           OR LOWER(profile_owner_username) = LOWER(@username)
+                    ]], {
+                        ["@identifier"] = account.identifier,
+                        ["@username"] = account.username
+                    }, function()
+                        MySQL.Async.execute([[
+                            DELETE FROM heavenly_news
+                            WHERE author_identifier = @identifier
+                        ]], {
+                            ["@identifier"] = account.identifier
+                        }, function()
+                            MySQL.Async.execute([[
+                                DELETE FROM heavenly_accounts
+                                WHERE LOWER(username) = LOWER(@username)
+                            ]], {
+                                ["@username"] = account.username
+                            }, function()
+                                HeavenlySessions[source] = nil
 
-                cb({
-                    ok = true,
-                    data = {
-                        deleted = true,
-                        username = account.username
-                    }
-                })
+                                cb({
+                                    ok = true,
+                                    data = {
+                                        deleted = true,
+                                        username = account.username
+                                    }
+                                })
+                            end)
+                        end)
+                    end)
+                end)
             end)
         end)
     end)
