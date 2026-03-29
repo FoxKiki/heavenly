@@ -61,7 +61,7 @@ select{
   width:100%;
   height:100%;
   object-fit:contain;
-  opacity:0.08;
+  opacity:0.16;
   pointer-events:none;
   z-index:-2;
   animation:logoFloat 8s ease-in-out infinite;
@@ -73,20 +73,12 @@ select{
   100%{ transform:scale(1) translateY(0); }
 }
 
-@keyframes loginFade{
-  to{
-    opacity:1;
-    transform:translate(-50%,-50%) scale(1);
-  }
-}
-
 .screen{
   display:none !important;
 }
 
 #loginScreen.screen.active{
   display:flex !important;
-  flex-direction:column;
 }
 
 #homeScreen.screen.active{
@@ -118,90 +110,56 @@ select{
   z-index:9999;
 }
 
-.loginCard{
-  width:min(520px, 92vw);
-  padding:38px 30px;
-  border-radius:28px;
-  background:
-    linear-gradient(180deg, rgba(16,22,34,0.96), rgba(10,14,22,0.96));
-  border:1px solid rgba(255,255,255,0.12);
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.02) inset,
-    0 26px 60px rgba(0,0,0,0.45),
-    0 0 40px rgba(139,92,246,0.10);
-  text-align:center;
-  color:var(--cyan);
-  font-family:"Palatino Linotype","Book Antiqua",Palatino,serif;
-  opacity:0;
-  transform:translate(-50%,-50%) scale(0.95);
-  position:absolute;
-  top:50%;
-  left:50%;
-  animation:loginFade 0.7s ease forwards;
-}
-
-.main-box.popup-open .loginCard{
-  opacity:0.25;
-  transform:translate(-50%,-50%) scale(0.92);
-  pointer-events:none;
-}
-
-.loginBrand{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-width:130px;
-  min-height:34px;
-  margin-bottom:18px;
-  padding:0 14px;
-  border-radius:999px;
-  background:linear-gradient(90deg, rgba(139,92,246,0.18), rgba(52,197,241,0.18));
-  border:1px solid rgba(255,255,255,0.10);
-  color:white;
-  font-size:13px;
-  font-weight:700;
-  letter-spacing:0.04em;
-  text-transform:uppercase;
-}
-
-.main-box h1{
-  margin:0 0 8px;
-  font-size:42px;
-  line-height:1;
-  color:white;
-}
-
-.main-box h3{
-  margin:0;
-  font-size:18px;
-  font-weight:400;
-  color:rgba(255,255,255,0.76);
-}
-
 .loginActions{
-  margin-top:28px;
   display:flex;
   flex-direction:column;
   gap:12px;
+  width:min(290px, 68vw);
+}
+
+.loginActionsFloating{
+  align-items:stretch;
 }
 
 .main-box button{
   display:block;
   width:100%;
-  padding:14px 16px;
-  border:none;
-  border-radius:14px;
-  background:linear-gradient(135deg, #7c3aed, #9333ea);
+  padding:12px 16px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,0.14);
+
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)),
+    linear-gradient(135deg, rgba(124,58,237,0.34), rgba(147,51,234,0.26));
+
   color:white;
   cursor:pointer;
-  transition:transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:0.01em;
+
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+
+  box-shadow:
+    0 10px 24px rgba(0,0,0,0.20),
+    0 0 18px rgba(124,58,237,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
 .main-box button:hover{
   transform:translateY(-1px);
+  border-color:rgba(255,255,255,0.20);
   box-shadow:
-    0 10px 26px rgba(124,58,237,0.28),
-    0 0 18px rgba(124,58,237,0.14);
+    0 14px 28px rgba(0,0,0,0.24),
+    0 0 20px rgba(124,58,237,0.12),
+    inset 0 1px 0 rgba(255,255,255,0.10);
 }
 
 .main-box button:active{
@@ -460,7 +418,6 @@ select{
   background:rgba(15,18,30,0.98);
   border:1px solid rgba(255,255,255,0.12);
   box-shadow:0 18px 38px rgba(0,0,0,0.45);
-
   opacity:0;
   transform:translateY(-6px) scale(0.985);
   pointer-events:none;
@@ -911,7 +868,7 @@ select{
   background:linear-gradient(180deg, rgba(155,112,255,1), rgba(88,216,255,1));
 }
 
-/* Sidebar-Scrollbar ebenfalls hübsch */
+/* Sidebar-Scrollbar */
 .appSidebar{
   scrollbar-width:thin;
   scrollbar-color:rgba(139,92,246,0.95) rgba(255,255,255,0.05);
@@ -1252,7 +1209,6 @@ select{
   justify-content:center !important;
   background:rgba(0,0,0,0.72) !important;
   z-index:999999 !important;
-
   opacity:0 !important;
   visibility:hidden !important;
   pointer-events:none !important;
@@ -1288,7 +1244,6 @@ select{
     0 0 30px rgba(124,58,237,0.10) !important;
   color:rgb(52,197,241) !important;
   font-family:"Palatino Linotype","Book Antiqua",Palatino,serif !important;
-
   opacity:0 !important;
   transform:translateY(10px) scale(0.985) !important;
   transition:
@@ -1505,7 +1460,6 @@ select{
   z-index:999998;
   align-items:center;
   justify-content:center;
-
   opacity:0;
   pointer-events:none;
   visibility:hidden;
@@ -1539,10 +1493,10 @@ select{
   overflow:hidden;
   transform:translateY(12px) scale(0.985);
   transition:transform 200ms ease;
-
-  .dmPanel.active .dmPanelBoxLarge{
-  transform:translateY(0) scale(1);
 }
+
+.dmPanel.active .dmPanelBoxLarge{
+  transform:translateY(0) scale(1);
 }
 
 .dmPanelHeader{
@@ -1904,7 +1858,7 @@ select{
 }
 
 .dmMessageActions .uiMenu{
- z-index: 30;
+  z-index:30;
 }
 
 .dmMessageMenuBtn{
@@ -2486,6 +2440,7 @@ select{
   box-shadow:0 14px 30px rgba(0,0,0,0.35);
   z-index:20;
 }
+
 .postMenu button{
   width:100%;
   padding:9px 10px;
@@ -2702,7 +2657,6 @@ select{
   display:flex;
   flex-direction:column;
   gap:6px;
-
   opacity:0;
   transform:translateY(-8px) scale(0.98);
   pointer-events:none;
@@ -2925,16 +2879,9 @@ select{
     text-align:left;
   }
 
-  .loginCard{
-    padding:30px 22px;
-  }
-
-  .main-box h1{
-    font-size:34px;
-  }
-
-  .main-box h3{
+  .main-box button{
     font-size:16px;
+    padding:15px 16px;
   }
 }
 
