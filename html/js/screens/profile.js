@@ -749,7 +749,7 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
       }
 
       if (container) {
-        container.innerHTML = '<div class="profilePrivateBanner">🔒 Nur für Freunde sichtbar</div><div class="postEmptyState">Dieses Profil ist privat. Nur Freunde können Beiträge sehen und kommentieren.</div>';
+        container.innerHTML = '<div class="profilePrivateImageWrap"><img class="profilePrivateImage" src="assets/logos/heavenlyprivat.png" alt="Privates Profil" /></div>';
       }
 
       if (creator) {
@@ -788,15 +788,43 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
   async function applyRelationshipInfo() {
     var user = getViewedUser();
     if (!user) return;
+    var canView = await canCurrentUserViewProfilePosts(user);
 
     var settings = await getUserSettings(user);
     var relationship = getRelationshipData(settings);
 
+    var statusRow = getEl("relationshipStatusText")
+      ? getEl("relationshipStatusText").closest(".profileInfoItem")
+      : null;
     var statusText = getEl("relationshipStatusText");
     var partnerRow = getEl("relationshipPartnerRow");
     var partnerBtn = getEl("relationshipPartnerBtn");
 
+    if (!canView) {
+      if (statusRow) {
+        statusRow.style.display = "none";
+      }
+
+      if (statusText) {
+        statusText.innerText = "";
+      }
+
+      if (partnerRow) {
+        partnerRow.style.display = "none";
+      }
+
+      if (partnerBtn) {
+        partnerBtn.innerText = "";
+      }
+
+      return;
+    }
+
     if (statusText) {
+      if (statusRow) {
+        statusRow.style.display = "flex";
+      }
+
       statusText.innerText = formatRelationshipStatus(relationship.status);
     }
 
@@ -814,6 +842,7 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
   async function applyInfoBoxDetails() {
     var user = getViewedUser();
     if (!user) return;
+    var canView = await canCurrentUserViewProfilePosts(user);
 
     var settings = await getUserSettings(user);
     var info = getInfoBoxData(settings);
@@ -824,6 +853,16 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     var jobText = getEl("jobText");
     var aboutRow = getEl("aboutRow");
     var aboutText = getEl("aboutText");
+
+    if (!canView) {
+      if (birthdayRow) birthdayRow.style.display = "none";
+      if (birthdayText) birthdayText.innerText = "";
+      if (jobRow) jobRow.style.display = "none";
+      if (jobText) jobText.innerText = "";
+      if (aboutRow) aboutRow.style.display = "none";
+      if (aboutText) aboutText.innerText = "";
+      return;
+    }
 
     if (birthdayRow && birthdayText) {
       if (info.birthday && info.birthday.trim()) {
@@ -1820,6 +1859,7 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
 
   window.applyProfileImages = applyProfileImages;
   window.applyHomeProfileTheme = applyHomeProfileTheme;
+  window.openBlocklistPopup = openBlocklistPopup;
   window.closeBlocklistPopup = closeBlocklistPopup;
   window.renderBlocklist = renderBlocklist;
   window.closeProfileMenu = closeProfileMenu;

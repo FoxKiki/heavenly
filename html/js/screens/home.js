@@ -10,6 +10,7 @@ Heavenly.cache.accounts = Heavenly.cache.accounts || null;
   var globalSearchTimer = null;
   var globalSearchRunId = 0;
   var profileClockMirrorTimer = null;
+  var newsEditId = null;
 
   function getEl(id) {
     return document.getElementById(id);
@@ -932,9 +933,202 @@ Heavenly.cache.accounts = Heavenly.cache.accounts || null;
     }
   };
 
+  function formatNewsDate(value) {
+    if (!value) return "";
+
+    var date = new Date(value);
+    if (isNaN(date.getTime())) {
+      return String(value);
+    }
+
+    return date.toLocaleString("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function getNewsEditorPayload() {
+    return {
+      title: getEl("newsTitleInput") ? getEl("newsTitleInput").value.trim() : "",
+      category: getEl("newsCategoryInput") ? getEl("newsCategoryInput").value.trim() : "",
+      content: getEl("newsContentInput") ? getEl("newsContentInput").value.trim() : ""
+    };
+  }
+
+  function resetNewsEditor() {
+    newsEditId = null;
+
+    if (getEl("newsTitleInput")) getEl("newsTitleInput").value = "";
+    if (getEl("newsCategoryInput")) getEl("newsCategoryInput").value = "";
+    if (getEl("newsContentInput")) getEl("newsContentInput").value = "";
+    if (getEl("newsSubmitBtn")) getEl("newsSubmitBtn").innerText = "News veröffentlichen";
+    if (getEl("newsCancelEditBtn")) getEl("newsCancelEditBtn").style.display = "none";
+  }
+
+  async function renderNewsPanel() {
+    var list = getEl("newsFeedList");
+    var composer = getEl("newsComposer");
+    var accessHint = getEl("newsAccessHint");
+    if (!list || !Heavenly.api || !Heavenly.api.getNews) return;
+
+    var result = await Heavenly.api.getNews();
+    if (!result || !result.ok) {
+      list.innerHTML = '<div class="postEmptyState">News konnten nicht geladen werden.</div>';
+      return;
+    }
+
+    var payload = result.data || {};
+    var items = Array.isArray(payload.items) ? payload.items : [];
+    var permissions = payload.permissions || {};
+
+    if (composer) {
+      composer.style.display = permissions.canCreate ? "flex" : "none";
+    }
+
+    if (accessHint) {
+      accessHint.style.display = permissions.canCreate ? "none" : "block";
+      accessHint.innerText = "News lesen kann jeder. Veröffentlichen dürfen nur freigegebene Jobs.";
+    }
+
+    if (!items.length) {
+      list.innerHTML = '<div class="postEmptyState">Noch keine News vorhanden.</div>';
+      return;
+    }
+
+    list.innerHTML = items.map(function (item) {
+      var actions = "";
+
+      if (item.canEdit) {
+        actions += '<button type="button" onclick="startNewsEdit(' + Number(item.id) + ')">Bearbeiten</button>';
+      }
+
+      if (item.canDelete) {
+        actions += '<button class="close" type="button" onclick="deleteNewsPost(' + Number(item.id) + ')">Löschen</button>';
+      }
+
+      return [
+        '<div class="newsItem">',
+          '<div class="newsItemTop">',
+            '<div class="newsItemMeta">',
+              '<div class="newsItemCategory">', escapeHtml(item.category || "Allgemein"), '</div>',
+              '<div class="newsItemTitle">', escapeHtml(item.title || ""), '</div>',
+              '<div class="newsItemByline">Von ', escapeHtml(item.authorUsername || "Unbekannt"), ' • ', escapeHtml(formatNewsDate(item.updatedAt || item.createdAt)), '</div>',
+            '</div>',
+            actions ? '<div class="newsItemActions">' + actions + '</div>' : '',
+          '</div>',
+          '<div class="newsItemContent">', escapeHtml(item.content || ""), '</div>',
+        '</div>'
+      ].join("");
+    }).join("");
+  }
+
+  async function openNewsPanel() {
+    var panel = getEl("newsPanel");
+    if (!panel) return;
+
+    panel.classList.add("active");
+    resetNewsEditor();
+    await renderNewsPanel();
+  }
+
+  window.closeNewsPanel = function () {
+    var panel = getEl("newsPanel");
+    if (panel) {
+      panel.classList.remove("active");
+    }
+
+    resetNewsEditor();
+  };
+
   window.openNews = function () {
+    openNewsPanel();
+  };
+
+  window.submitNewsPost = async function () {
+    if (!Heavenly.api) return;
+
+    var editId = newsEditId;
+    var payload = getNewsEditorPayload();
+    if (!payload.title || !payload.content) {
+      if (typeof window.setFeedback === "function") {
+        window.setFeedback("Bitte Überschrift und Inhalt eintragen", false);
+      }
+      return;
+    }
+
+    var result = editId
+      ? await Heavenly.api.updateNews(editId, payload)
+      : await Heavenly.api.createNews(payload);
+
+    if (!result || !result.ok) {
+      if (typeof window.setFeedback === "function") {
+        window.setFeedback(result && result.message ? result.message : "News konnten nicht gespeichert werden", false);
+      }
+      return;
+    }
+
+    resetNewsEditor();
+    await renderNewsPanel();
+
     if (typeof window.setFeedback === "function") {
-      window.setFeedback("News kommt gleich 😊", true);
+      window.setFeedback(editId ? "News aktualisiert" : "News veröffentlicht", true);
+    }
+  };
+
+  window.startNewsEdit = async function (id) {
+    var result = await Heavenly.api.getNews();
+    if (!result || !result.ok) return;
+
+    var items = Array.isArray(result.data && result.data.items) ? result.data.items : [];
+    var item = items.find(function (entry) {
+      return Number(entry.id) === Number(id);
+    });
+
+    if (!item) return;
+
+    newsEditId = Number(id);
+    if (getEl("newsTitleInput")) getEl("newsTitleInput").value = item.title || "";
+    if (getEl("newsCategoryInput")) getEl("newsCategoryInput").value = item.category || "";
+    if (getEl("newsContentInput")) getEl("newsContentInput").value = item.content || "";
+    if (getEl("newsSubmitBtn")) getEl("newsSubmitBtn").innerText = "News speichern";
+    if (getEl("newsCancelEditBtn")) getEl("newsCancelEditBtn").style.display = "inline-flex";
+  };
+
+  window.cancelNewsEdit = function () {
+    resetNewsEditor();
+  };
+
+  window.deleteNewsPost = async function (id) {
+    if (!Heavenly.api || !Heavenly.api.deleteNews) return;
+
+    var result = await Heavenly.api.deleteNews(id);
+    if (!result || !result.ok) {
+      if (typeof window.setFeedback === "function") {
+        window.setFeedback(result && result.message ? result.message : "News konnten nicht gelöscht werden", false);
+      }
+      return;
+    }
+
+    if (newsEditId === Number(id)) {
+      resetNewsEditor();
+    }
+
+    await renderNewsPanel();
+
+    if (typeof window.setFeedback === "function") {
+      window.setFeedback("News gelöscht", true);
     }
   };
 

@@ -7,7 +7,10 @@ version '1.0.0'
 
 lua54 'yes'
 
-shared_script '@es_extended/imports.lua'
+shared_scripts {
+    '@es_extended/imports.lua',
+    'config.lua'
+}
 
 server_scripts {
     '@mysql-async/lib/MySQL.lua',

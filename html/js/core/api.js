@@ -1,6 +1,8 @@
 window.Heavenly = window.Heavenly || {};
 
 Heavenly.api = (function () {
+  var LOCAL_NEWS_KEY = "heavenly_news_posts";
+
   function isFiveM() {
     return !!(Heavenly.env && Heavenly.env.isFiveM && Heavenly.env.isFiveM());
   }
@@ -386,6 +388,140 @@ Heavenly.api = (function () {
     });
   }
 
+  function getLocalNewsPosts() {
+    try {
+      var raw = localStorage.getItem(LOCAL_NEWS_KEY);
+      var parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function setLocalNewsPosts(items) {
+    try {
+      localStorage.setItem(LOCAL_NEWS_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+    } catch (error) {}
+  }
+
+  function getLocalNewsPermissions() {
+    var session = Heavenly.storage && Heavenly.storage.getSession
+      ? Heavenly.storage.getSession()
+      : null;
+
+    return {
+      canCreate: true,
+      canManageAll: true,
+      sessionUsername: session && session.username ? session.username : ""
+    };
+  }
+
+  function localGetNews() {
+    var permissions = getLocalNewsPermissions();
+    var items = getLocalNewsPosts().map(function (item) {
+      var authorUsername = item && item.authorUsername ? item.authorUsername : "Unbekannt";
+      var isAuthor = permissions.sessionUsername
+        && String(authorUsername).toLowerCase() === String(permissions.sessionUsername).toLowerCase();
+
+      return Object.assign({}, item, {
+        canEdit: isAuthor || permissions.canManageAll,
+        canDelete: isAuthor || permissions.canManageAll
+      });
+    });
+
+    return ok({
+      items: items,
+      permissions: permissions
+    });
+  }
+
+  function localCreateNews(payload) {
+    var permissions = getLocalNewsPermissions();
+    if (!permissions.canCreate) {
+      return fail("Keine Berechtigung");
+    }
+
+    var session = Heavenly.storage && Heavenly.storage.getSession
+      ? Heavenly.storage.getSession()
+      : null;
+    var username = session && session.username ? session.username : "Unbekannt";
+    var items = getLocalNewsPosts();
+    var id = Date.now();
+
+    items.unshift({
+      id: id,
+      authorUsername: username,
+      title: String(payload && payload.title || "").trim(),
+      content: String(payload && payload.content || "").trim(),
+      category: String(payload && payload.category || "Allgemein").trim() || "Allgemein",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
+    setLocalNewsPosts(items);
+    return ok({ id: id });
+  }
+
+  function localUpdateNews(id, payload) {
+    var permissions = getLocalNewsPermissions();
+    var items = getLocalNewsPosts();
+    var sessionUsername = String(permissions.sessionUsername || "").toLowerCase();
+    var changed = false;
+
+    items = items.map(function (item) {
+      if (!item || Number(item.id) !== Number(id)) {
+        return item;
+      }
+
+      var isAuthor = String(item.authorUsername || "").toLowerCase() === sessionUsername;
+      if (!isAuthor && !permissions.canManageAll) {
+        return item;
+      }
+
+      changed = true;
+      return Object.assign({}, item, {
+        title: String(payload && payload.title || "").trim(),
+        content: String(payload && payload.content || "").trim(),
+        category: String(payload && payload.category || "Allgemein").trim() || "Allgemein",
+        updatedAt: new Date().toISOString()
+      });
+    });
+
+    if (!changed) {
+      return fail("News nicht gefunden oder keine Berechtigung");
+    }
+
+    setLocalNewsPosts(items);
+    return ok({ id: id, updated: true });
+  }
+
+  function localDeleteNews(id) {
+    var permissions = getLocalNewsPermissions();
+    var sessionUsername = String(permissions.sessionUsername || "").toLowerCase();
+    var items = getLocalNewsPosts();
+    var nextItems = [];
+    var changed = false;
+
+    items.forEach(function (item) {
+      var isTarget = item && Number(item.id) === Number(id);
+      var isAuthor = isTarget && String(item.authorUsername || "").toLowerCase() === sessionUsername;
+
+      if (isTarget && (isAuthor || permissions.canManageAll)) {
+        changed = true;
+        return;
+      }
+
+      nextItems.push(item);
+    });
+
+    if (!changed) {
+      return fail("News nicht gefunden oder keine Berechtigung");
+    }
+
+    setLocalNewsPosts(nextItems);
+    return ok({ id: id, deleted: true });
+  }
+
   function unwrapNuiResult(result) {
     if (!result || !result.ok) {
       return result || { ok: false, message: "Unbekannter Fehler" };
@@ -561,6 +697,26 @@ Heavenly.api = (function () {
     return unwrapNuiResult(await nuiPost("getAccounts", {}));
   }
 
+  async function fivemGetNews() {
+    return unwrapNuiResult(await nuiPost("getNews", {}));
+  }
+
+  async function fivemCreateNews(payload) {
+    return unwrapNuiResult(await nuiPost("createNews", payload || {}));
+  }
+
+  async function fivemUpdateNews(id, payload) {
+    return unwrapNuiResult(await nuiPost("updateNews", Object.assign({}, payload || {}, {
+      id: id
+    })));
+  }
+
+  async function fivemDeleteNews(id) {
+    return unwrapNuiResult(await nuiPost("deleteNews", {
+      id: id
+    }));
+  }
+
   function register(username, password, passwordRepeat) {
     return isFiveM()
       ? fivemRegister(username, password, passwordRepeat)
@@ -671,6 +827,30 @@ Heavenly.api = (function () {
     );
   }
 
+  function getNews() {
+    return isFiveM()
+      ? fivemGetNews()
+      : localGetNews();
+  }
+
+  function createNews(payload) {
+    return isFiveM()
+      ? fivemCreateNews(payload)
+      : localCreateNews(payload);
+  }
+
+  function updateNews(id, payload) {
+    return isFiveM()
+      ? fivemUpdateNews(id, payload)
+      : localUpdateNews(id, payload);
+  }
+
+  function deleteNews(id) {
+    return isFiveM()
+      ? fivemDeleteNews(id)
+      : localDeleteNews(id);
+  }
+
   return {
     register: register,
     login: login,
@@ -688,6 +868,10 @@ Heavenly.api = (function () {
     setFriends: setFriends,
     clearProfileData: clearProfileData,
     deleteAccount: deleteAccount,
-    getAccounts: getAccounts
+    getAccounts: getAccounts,
+    getNews: getNews,
+    createNews: createNews,
+    updateNews: updateNews,
+    deleteNews: deleteNews
   };
 })();

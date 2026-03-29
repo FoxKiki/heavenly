@@ -118,3 +118,19 @@ end)
 RegisterNUICallback("deleteAccount", function(_, cb)
     triggerServerCallback("heavenly:deleteAccount", cb)
 end)
+
+RegisterNUICallback("getNews", function(_, cb)
+    triggerServerCallback("heavenly:getNews", cb)
+end)
+
+RegisterNUICallback("createNews", function(data, cb)
+    triggerServerCallback("heavenly:createNews", cb, data or {})
+end)
+
+RegisterNUICallback("updateNews", function(data, cb)
+    triggerServerCallback("heavenly:updateNews", cb, data and data.id, data or {})
+end)
+
+RegisterNUICallback("deleteNews", function(data, cb)
+    triggerServerCallback("heavenly:deleteNews", cb, data and data.id)
+end)

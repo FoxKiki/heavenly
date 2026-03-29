@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
@@ -42,27 +42,28 @@
 
         <nav class="sidebarNav">
           <button class="sidebarNavBtn active" type="button" onclick="closeProfile()">
-            <span class="sidebarNavIcon">⌂</span>
+            <span class="sidebarNavIcon">&#8962;</span>
             <span class="sidebarNavText">Home</span>
           </button>
 
           <button class="sidebarNavBtn" type="button" onclick="openProfile()">
-            <span class="sidebarNavIcon">👤</span>
-            <span class="sidebarNavText">Blockliste</span>
+            <span class="sidebarNavIcon">&#128100;</span>
+            <span class="sidebarNavText">Profil</span>
           </button>
 
           <button class="sidebarNavBtn" type="button" onclick="openDMs()">
-            <span class="sidebarNavIcon">✉</span>
+            <span class="sidebarNavIcon">&#9993;</span>
             <span class="sidebarNavText">Nachrichten</span>
           </button>
 
           <button class="sidebarNavBtn" type="button" onclick="openNews()">
-            <span class="sidebarNavIcon">✦</span>
+            <span class="sidebarNavIcon">&#10022;</span>
             <span class="sidebarNavText">News</span>
           </button>
         </nav>
 
-        <div id="profileSidebarActions" class="profileSidebarActions">
+        
+        <div id="homeProfileSidebarActionsGhost" class="profileSidebarActions" hidden>
           <div class="profileSidebarSectionTitle">Profil</div>
 
           <button
@@ -71,7 +72,7 @@
             type="button"
             onclick="openProfileEditorPopup()"
           >
-            <span class="sidebarNavIcon">âœŽ</span>
+            <span class="sidebarNavIcon">&#9998;</span>
             <span class="sidebarNavText">Bearbeiten</span>
           </button>
 
@@ -81,7 +82,7 @@
               type="button"
               onclick="openProfileSection('avatar')"
             >
-              <span class="sidebarNavIcon">ðŸ‘¤</span>
+              <span class="sidebarNavIcon">&#128100;</span>
               <span class="sidebarNavText">Profilbild</span>
             </button>
 
@@ -90,7 +91,7 @@
               type="button"
               onclick="openProfileSection('cover')"
             >
-              <span class="sidebarNavIcon">ðŸ–¼</span>
+              <span class="sidebarNavIcon">&#128444;</span>
               <span class="sidebarNavText">Titelbild</span>
             </button>
 
@@ -99,7 +100,7 @@
               type="button"
               onclick="openProfileSection('profileBg')"
             >
-              <span class="sidebarNavIcon">âœ¨</span>
+              <span class="sidebarNavIcon">&#10024;</span>
               <span class="sidebarNavText">Hintergrund</span>
             </button>
           </div>
@@ -234,29 +235,72 @@
 
         <nav class="sidebarNav">
           <button class="sidebarNavBtn" type="button" onclick="closeProfile()">
-            <span class="sidebarNavIcon">⌂</span>
+            <span class="sidebarNavIcon">&#8962;</span>
             <span class="sidebarNavText">Home</span>
           </button>
 
           <button id="profileSidebarBlocklistBtn" class="sidebarNavBtn active" type="button" onclick="openBlocklistPopup()">
-            <span class="sidebarNavIcon">👤</span>
-            <span class="sidebarNavText">Profil</span>
+            <span class="sidebarNavIcon">&#9940;</span>
+            <span class="sidebarNavText">Blockliste</span>
           </button>
 
           <button class="sidebarNavBtn" type="button" onclick="openDMs()">
-            <span class="sidebarNavIcon">✉</span>
+            <span class="sidebarNavIcon">&#9993;</span>
             <span class="sidebarNavText">Nachrichten</span>
           </button>
 
           <button class="sidebarNavBtn" type="button" onclick="openNews()">
-            <span class="sidebarNavIcon">✦</span>
+            <span class="sidebarNavIcon">&#10022;</span>
             <span class="sidebarNavText">News</span>
           </button>
         </nav>
 
+        <div id="profileSidebarActions" class="profileSidebarActions">
+          <div class="profileSidebarSectionTitle">Profil</div>
+
+          <button
+            id="profileSidebarEditBtn"
+            class="sidebarNavBtn profileSidebarActionBtn"
+            type="button"
+            onclick="openProfileEditorPopup()"
+          >
+            <span class="sidebarNavIcon">&#9998;</span>
+            <span class="sidebarNavText">Bearbeiten</span>
+          </button>
+
+          <div class="profileSidebarQuickGrid">
+            <button
+              class="sidebarNavBtn profileSidebarActionBtn"
+              type="button"
+              onclick="openProfileSection('avatar')"
+            >
+              <span class="sidebarNavIcon">&#128100;</span>
+              <span class="sidebarNavText">Profilbild</span>
+            </button>
+
+            <button
+              class="sidebarNavBtn profileSidebarActionBtn"
+              type="button"
+              onclick="openProfileSection('cover')"
+            >
+              <span class="sidebarNavIcon">&#128444;</span>
+              <span class="sidebarNavText">Titelbild</span>
+            </button>
+
+            <button
+              class="sidebarNavBtn profileSidebarActionBtn"
+              type="button"
+              onclick="openProfileSection('profileBg')"
+            >
+              <span class="sidebarNavIcon">&#10024;</span>
+              <span class="sidebarNavText">Hintergrund</span>
+            </button>
+          </div>
+        </div>
+
         <div class="sidebarBottom">
           <button class="sidebarNavBtn" type="button" onclick="closeProfile()">
-            <span class="sidebarNavIcon">←</span>
+            <span class="sidebarNavIcon">&#8592;</span>
             <span class="sidebarNavText">Zurück</span>
           </button>
         </div>
@@ -518,6 +562,30 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="newsPanel" class="dmPanel" onclick="closeNewsPanel()">
+    <div class="dmPanelBox dmPanelBoxLarge newsPanelBox" onclick="event.stopPropagation()">
+      <div class="dmPanelHeader">
+        <div class="dmPanelTitle">News</div>
+        <button class="dmCloseBtn" type="button" onclick="closeNewsPanel()">✕</button>
+      </div>
+
+      <div class="newsPanelBody">
+        <div id="newsComposer" class="newsComposer" style="display:none;">
+          <input id="newsTitleInput" type="text" maxlength="120" placeholder="Überschrift" />
+          <input id="newsCategoryInput" type="text" maxlength="60" placeholder="Kategorie oder Bereich" />
+          <textarea id="newsContentInput" class="newsContentInput" maxlength="2000" placeholder="Was gibt es Neues?"></textarea>
+          <div class="newsComposerActions">
+            <button id="newsSubmitBtn" type="button" onclick="submitNewsPost()">News veröffentlichen</button>
+            <button id="newsCancelEditBtn" class="close" type="button" onclick="cancelNewsEdit()" style="display:none;">Bearbeiten abbrechen</button>
+          </div>
+        </div>
+
+        <div id="newsAccessHint" class="newsAccessHint" style="display:none;"></div>
+        <div id="newsFeedList" class="newsFeedList"></div>
       </div>
     </div>
   </div>
