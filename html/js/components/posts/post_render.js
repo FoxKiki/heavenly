@@ -4,6 +4,7 @@ Heavenly.posts = Heavenly.posts || {};
 (function () {
   var commentComposerState = {};
   var delegatedRoots = {};
+  var infiniteFeedBindings = {};
 
   function getCurrentUser() {
     return Heavenly && Heavenly.state ? Heavenly.state.currentUser : null;
@@ -39,9 +40,7 @@ Heavenly.posts = Heavenly.posts || {};
 
   function ensureCommentComposerState(inputId) {
     if (!commentComposerState[inputId]) {
-      commentComposerState[inputId] = {
-        images: []
-      };
+      commentComposerState[inputId] = { images: [] };
     }
 
     return commentComposerState[inputId];
@@ -131,7 +130,6 @@ Heavenly.posts = Heavenly.posts || {};
   async function addFilesToCommentComposer(inputId, files) {
     var state = ensureCommentComposerState(inputId);
     var list = Array.prototype.slice.call(files || []);
-    if (!list.length) return;
 
     for (var i = 0; i < list.length; i++) {
       var file = list[i];
@@ -141,8 +139,7 @@ Heavenly.posts = Heavenly.posts || {};
       }
 
       try {
-        var dataUrl = await readFileAsDataUrl(file);
-        state.images.push(dataUrl);
+        state.images.push(await readFileAsDataUrl(file));
       } catch (error) {
         console.error("Comment image read failed", error);
       }
@@ -176,6 +173,10 @@ Heavenly.posts = Heavenly.posts || {};
     document.querySelectorAll(".postMenuBtn.active").forEach(function (btn) {
       btn.classList.remove("active");
     });
+
+    if (Heavenly.posts.commentRender && Heavenly.posts.commentRender.closeCommentMenus) {
+      Heavenly.posts.commentRender.closeCommentMenus();
+    }
   }
 
   function togglePostMenu(postId, event) {
@@ -190,15 +191,15 @@ Heavenly.posts = Heavenly.posts || {};
     var shouldOpen = !menu.classList.contains("open");
     closePostMenus();
 
-    if (shouldOpen) {
-      if (Heavenly.overlay && Heavenly.overlay.open) {
-        Heavenly.overlay.open(menu, "open");
-      } else {
-        menu.classList.add("open");
-      }
+    if (!shouldOpen) return;
 
-      btn.classList.add("active");
+    if (Heavenly.overlay && Heavenly.overlay.open) {
+      Heavenly.overlay.open(menu, "open");
+    } else {
+      menu.classList.add("open");
     }
+
+    btn.classList.add("active");
   }
 
   function renderImages(images) {
@@ -211,7 +212,7 @@ Heavenly.posts = Heavenly.posts || {};
       images.map(function (src) {
         return '<img class="postImage" src="' + escapeHtml(src) + '" alt="Post Bild" loading="lazy">';
       }).join(""),
-      '</div>'
+      "</div>"
     ].join("");
   }
 
@@ -223,7 +224,7 @@ Heavenly.posts = Heavenly.posts || {};
     return [
       '<div class="postAvatar fallback">',
       escapeHtml(String(post.authorDisplayName || post.authorUsername || "?").charAt(0).toUpperCase()),
-      '</div>'
+      "</div>"
     ].join("");
   }
 
@@ -254,18 +255,17 @@ Heavenly.posts = Heavenly.posts || {};
   }
 
   function renderHeader(post, feedType, ownerOption) {
-    var ownPost = isOwnPost(post);
     var menuMarkup = "";
 
-    if (ownPost) {
+    if (isOwnPost(post)) {
       menuMarkup = [
         '<div class="postMenuWrap uiMenuWrap">',
         '<button type="button" class="postMenuBtn uiMenuBtn" id="postMenuBtn_' + post.id + '" onclick="Heavenly.posts.render.togglePostMenu(\'' + post.id + '\', event)">⋯</button>',
         '<div class="postMenu uiMenu" id="postMenu_' + post.id + '">',
         '<button type="button" onclick="event.stopPropagation(); Heavenly.posts.render.handleEditClick(\'' + post.id + '\', \'' + encodeText(post.text || "") + '\', \'' + feedType + '\', ' + ownerOption + ')">Bearbeiten</button>',
         '<button type="button" onclick="event.stopPropagation(); Heavenly.posts.render.handleDeleteClick(\'' + post.id + '\', \'' + feedType + '\', ' + ownerOption + ')">Löschen</button>',
-        '</div>',
-        '</div>'
+        "</div>",
+        "</div>"
       ].join("");
     }
 
@@ -273,11 +273,11 @@ Heavenly.posts = Heavenly.posts || {};
       '<div class="postHeader">',
       getAvatarMarkup(post),
       '<div class="postHeaderMeta">',
-      '<div class="postAuthor">' + escapeHtml(post.authorDisplayName || post.authorUsername || "Unbekannt") + '</div>',
-      '<div class="postDate">' + escapeHtml(formatDate(post.createdAt)) + '</div>',
-      '</div>',
+      '<div class="postAuthor">' + escapeHtml(post.authorDisplayName || post.authorUsername || "Unbekannt") + "</div>",
+      '<div class="postDate">' + escapeHtml(formatDate(post.createdAt)) + "</div>",
+      "</div>",
       menuMarkup,
-      '</div>'
+      "</div>"
     ].join("");
   }
 
@@ -294,36 +294,31 @@ Heavenly.posts = Heavenly.posts || {};
     return [
       '<article class="postCard" data-post-id="' + escapeHtml(post.id) + '">',
       renderHeader(post, feedType, ownerOption),
-      '<div class="postText">' + formatText(post.text) + '</div>',
+      '<div class="postText">' + formatText(post.text) + "</div>",
       renderImages(post.images),
-
       '<div class="postActionsRow">',
-      '<button type="button" class="postActionBtn' + (isLiked ? ' active' : '') + '" onclick="Heavenly.posts.actions.toggleLike(\'' + post.id + '\', \'' + feedType + '\', { profileOwner: ' + ownerOption + ' })">',
-      '❤ ' + getLikeCount(post),
-      '</button>',
-      '<button type="button" class="postActionBtn staticBtn">💬 ' + getCommentCount(post) + '</button>',
-      '</div>',
-
+      '<button type="button" class="postActionBtn' + (isLiked ? " active" : "") + '" onclick="Heavenly.posts.actions.toggleLike(\'' + post.id + '\', \'' + feedType + '\', { profileOwner: ' + ownerOption + ' })">❤ ' + getLikeCount(post) + "</button>",
+      '<button type="button" class="postActionBtn staticBtn">💬 ' + getCommentCount(post) + "</button>",
+      "</div>",
       '<div class="postCommentsWrap">',
       Heavenly.posts.commentRender.renderComments(post.id, post.comments, {
         feedType: feedType,
         profileOwner: options.profileOwner
       }),
-      '</div>',
-
+      "</div>",
       '<div class="postCommentComposer" data-comment-input="' + commentInputId + '">',
       '<div class="postCommentTools">',
       '<button type="button" class="dmToolBtn commentImageBtn" data-comment-image-btn="' + commentInputId + '" title="Bild antworten">🖼</button>',
       '<button type="button" class="dmToolBtn commentEmojiBtn" data-comment-emoji-btn="' + commentInputId + '" title="Emoji / Emotes">😊</button>',
-      '</div>',
+      "</div>",
       '<input id="' + commentInputId + '_imageInput" type="file" accept="image/*" multiple hidden>',
       '<div id="' + commentInputId + '_preview" class="commentComposerPreview" style="display:none;"></div>',
       '<div class="postCommentForm">',
       '<textarea id="' + commentInputId + '" class="postCommentInput" placeholder="Kommentieren..." rows="1"></textarea>',
       '<button type="button" class="postCommentSend" onclick="Heavenly.posts.actions.submitComment(\'' + post.id + '\', \'' + commentInputId + '\', \'' + feedType + '\', { profileOwner: ' + ownerOption + ' })">Senden</button>',
-      '</div>',
-      '</div>',
-      '</article>'
+      "</div>",
+      "</div>",
+      "</article>"
     ].join("");
   }
 
@@ -347,6 +342,21 @@ Heavenly.posts = Heavenly.posts || {};
 
         textarea.addEventListener("input", function () {
           autoResizeTextarea(textarea, 150);
+          composer.classList.toggle("active", !!String(textarea.value || "").trim());
+        });
+
+        textarea.addEventListener("focus", function () {
+          composer.classList.add("active");
+        });
+
+        textarea.addEventListener("blur", function () {
+          setTimeout(function () {
+            var state = ensureCommentComposerState(inputId);
+            composer.classList.toggle(
+              "active",
+              !!String(textarea.value || "").trim() || state.images.length > 0
+            );
+          }, 50);
         });
 
         textarea.addEventListener("keydown", function (event) {
@@ -367,19 +377,15 @@ Heavenly.posts = Heavenly.posts || {};
           for (var i = 0; i < clipboardData.items.length; i++) {
             var item = clipboardData.items[i];
 
-            if (!item || item.kind !== "file") {
-              continue;
-            }
-
-            if (!item.type || item.type.indexOf("image/") !== 0) {
-              continue;
-            }
+            if (!item || item.kind !== "file") continue;
+            if (!item.type || item.type.indexOf("image/") !== 0) continue;
 
             var file = item.getAsFile();
             if (!file) continue;
 
             event.preventDefault();
             await addFilesToCommentComposer(inputId, [file]);
+            composer.classList.add("active");
             focusCommentInput(inputId);
             return;
           }
@@ -400,32 +406,31 @@ Heavenly.posts = Heavenly.posts || {};
       if (emojiBtn && !emojiBtn.dataset.boundClick) {
         emojiBtn.dataset.boundClick = "1";
         emojiBtn.addEventListener("click", function () {
-          if (typeof window.openEmojiPicker === "function") {
-            window.openEmojiPicker(inputId, {
-              mode: "comment",
-              onEmoteSelect: function (emote) {
-                if (!emote || !emote.src) return;
+          if (typeof window.openEmojiPicker !== "function") return;
 
-                var state = ensureCommentComposerState(inputId);
-                state.images.push(emote.src);
-                renderCommentPreview(inputId);
-                focusCommentInput(inputId);
-              }
-            });
-          }
+          window.openEmojiPicker(inputId, {
+            mode: "comment",
+            onEmoteSelect: function (emote) {
+              if (!emote || !emote.src) return;
+
+              ensureCommentComposerState(inputId).images.push(emote.src);
+              renderCommentPreview(inputId);
+              composer.classList.add("active");
+              focusCommentInput(inputId);
+            }
+          });
         });
       }
 
       if (imageInput && !imageInput.dataset.boundChange) {
         imageInput.dataset.boundChange = "1";
         imageInput.addEventListener("change", async function () {
-          var files = imageInput.files;
-
-          if (files && files.length) {
-            await addFilesToCommentComposer(inputId, files);
+          if (imageInput.files && imageInput.files.length) {
+            await addFilesToCommentComposer(inputId, imageInput.files);
           }
 
           imageInput.value = "";
+          composer.classList.add("active");
           focusCommentInput(inputId);
         });
       }
@@ -452,7 +457,7 @@ Heavenly.posts = Heavenly.posts || {};
 
       viewerImg.src = img.src;
 
-      if (window.Heavenly && Heavenly.overlay && Heavenly.overlay.open) {
+      if (Heavenly.overlay && Heavenly.overlay.open) {
         Heavenly.overlay.open(viewer, "open");
       } else {
         viewer.classList.add("open");
@@ -480,8 +485,6 @@ Heavenly.posts = Heavenly.posts || {};
     closePostMenus();
   }
 
-    var infiniteFeedBindings = {};
-
   function bindInfiniteFeed(containerId, options) {
     options = options || {};
 
@@ -496,10 +499,8 @@ Heavenly.posts = Heavenly.posts || {};
 
     if (!scrollElement) return;
 
-    var key = containerId;
-
-    if (!infiniteFeedBindings[key]) {
-      infiniteFeedBindings[key] = {
+    if (!infiniteFeedBindings[containerId]) {
+      infiniteFeedBindings[containerId] = {
         scrollElement: null,
         onScroll: null,
         loading: false,
@@ -508,7 +509,7 @@ Heavenly.posts = Heavenly.posts || {};
       };
     }
 
-    var binding = infiniteFeedBindings[key];
+    var binding = infiniteFeedBindings[containerId];
     binding.hasMore = !!options.hasMore;
     binding.onLoadMore = typeof options.onLoadMore === "function" ? options.onLoadMore : null;
 
@@ -519,9 +520,9 @@ Heavenly.posts = Heavenly.posts || {};
 
       binding.scrollElement = scrollElement;
       binding.onScroll = function () {
-        if (binding.loading) return;
-        if (!binding.hasMore) return;
-        if (typeof binding.onLoadMore !== "function") return;
+        if (binding.loading || !binding.hasMore || typeof binding.onLoadMore !== "function") {
+          return;
+        }
 
         var remaining =
           scrollElement.scrollHeight - scrollElement.scrollTop - scrollElement.clientHeight;
@@ -543,56 +544,13 @@ Heavenly.posts = Heavenly.posts || {};
 
       scrollElement.addEventListener("scroll", binding.onScroll);
     }
-
-    setTimeout(function () {
-      if (binding.loading) return;
-      if (!binding.hasMore) return;
-      if (typeof binding.onLoadMore !== "function") return;
-
-      if (scrollElement.scrollHeight <= scrollElement.clientHeight + 40) {
-        binding.loading = true;
-
-        Promise.resolve(binding.onLoadMore())
-          .catch(function (error) {
-            console.error("Initial infinite feed load failed", error);
-          })
-          .finally(function () {
-            setTimeout(function () {
-              binding.loading = false;
-            }, 120);
-          });
-      }
-    }, 0);
-  }
-
-  async function openPostConfirm(titleText, bodyText) {
-    if (typeof window.openDmConfirm === "function") {
-      return await window.openDmConfirm(titleText, bodyText);
-    }
-
-    console.warn("openDmConfirm fehlt noch.");
-    return false;
-  }
-
-  async function openPostPrompt(titleText, initialValue) {
-    if (typeof window.openDmPrompt === "function") {
-      return await window.openDmPrompt(titleText, initialValue);
-    }
-
-    console.warn("openDmPrompt fehlt noch.");
-    return null;
   }
 
   async function handleEditClick(postId, encodedText, feedType, profileOwner) {
     closePostMenus();
+    if (!window.openDmPrompt || !Heavenly.posts.actions || !Heavenly.posts.actions.editPost) return;
 
-    if (!Heavenly.posts || !Heavenly.posts.actions || typeof Heavenly.posts.actions.editPost !== "function") {
-      return;
-    }
-
-    var decoded = decodeURIComponent(encodedText || "");
-    var nextText = await openPostPrompt("Beitrag bearbeiten", decoded);
-
+    var nextText = await window.openDmPrompt("Beitrag bearbeiten", decodeURIComponent(encodedText || ""));
     if (nextText === null) return;
 
     nextText = String(nextText).trim();
@@ -605,12 +563,9 @@ Heavenly.posts = Heavenly.posts || {};
 
   async function handleDeleteClick(postId, feedType, profileOwner) {
     closePostMenus();
+    if (!window.openDmConfirm || !Heavenly.posts.actions || !Heavenly.posts.actions.deletePost) return;
 
-    if (!Heavenly.posts || !Heavenly.posts.actions || typeof Heavenly.posts.actions.deletePost !== "function") {
-      return;
-    }
-
-    var confirmed = await openPostConfirm(
+    var confirmed = await window.openDmConfirm(
       "Beitrag löschen",
       "Möchtest du diesen Beitrag wirklich löschen?"
     );
@@ -622,7 +577,7 @@ Heavenly.posts = Heavenly.posts || {};
     });
   }
 
-    Heavenly.posts.render = {
+  Heavenly.posts.render = {
     renderPost: renderPost,
     renderFeed: renderFeed,
     handleEditClick: handleEditClick,

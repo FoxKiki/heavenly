@@ -29,9 +29,9 @@ Heavenly.posts = Heavenly.posts || {};
     rerenderFeed(feedType, options);
   }
 
-    async function submitComment(postId, inputId, feedType, options) {
+  async function submitComment(postId, inputId, feedType, options) {
     var input = document.getElementById(inputId);
-    if (!input) return;
+    if (!input || !Heavenly.posts || !Heavenly.posts.store) return;
 
     if (feedType === "profile") {
       var profileOwner = options && options.profileOwner ? options.profileOwner : null;
@@ -52,7 +52,6 @@ Heavenly.posts = Heavenly.posts || {};
     var images = [];
 
     if (
-      Heavenly.posts &&
       Heavenly.posts.render &&
       typeof Heavenly.posts.render.ensureCommentComposerState === "function"
     ) {
@@ -63,7 +62,6 @@ Heavenly.posts = Heavenly.posts || {};
     if (!comment) return;
 
     if (
-      Heavenly.posts &&
       Heavenly.posts.render &&
       typeof Heavenly.posts.render.resetCommentComposer === "function"
     ) {
@@ -75,8 +73,6 @@ Heavenly.posts = Heavenly.posts || {};
 
     rerenderFeed(feedType, options);
   }
-
-
 
   function editPost(postId, nextText, feedType, options) {
     if (!Heavenly.posts || !Heavenly.posts.store) return;
@@ -96,11 +92,31 @@ Heavenly.posts = Heavenly.posts || {};
     rerenderFeed(feedType, options);
   }
 
+  function editComment(postId, commentId, nextText, feedType, options) {
+    if (!Heavenly.posts || !Heavenly.posts.store) return;
+    if (nextText === null || nextText === undefined) return;
+
+    nextText = String(nextText).trim();
+    if (!nextText) return;
+
+    Heavenly.posts.store.editComment(postId, commentId, nextText);
+    rerenderFeed(feedType, options);
+  }
+
+  function deleteComment(postId, commentId, feedType, options) {
+    if (!Heavenly.posts || !Heavenly.posts.store) return;
+
+    Heavenly.posts.store.deleteComment(postId, commentId);
+    rerenderFeed(feedType, options);
+  }
+
   Heavenly.posts.actions = {
     toggleLike: toggleLike,
     toggleCommentLike: toggleCommentLike,
     submitComment: submitComment,
     editPost: editPost,
-    deletePost: deletePost
+    deletePost: deletePost,
+    editComment: editComment,
+    deleteComment: deleteComment
   };
 })();

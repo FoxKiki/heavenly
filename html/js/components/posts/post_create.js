@@ -14,9 +14,7 @@ Heavenly.posts = Heavenly.posts || {};
 
   function ensureComposerState(inputId) {
     if (!composerState[inputId]) {
-      composerState[inputId] = {
-        images: []
-      };
+      composerState[inputId] = { images: [] };
     }
 
     return composerState[inputId];
@@ -63,6 +61,21 @@ Heavenly.posts = Heavenly.posts || {};
     }
   }
 
+  function refreshComposerState(inputId) {
+    var input = getEl(inputId);
+    if (!input) return;
+
+    var creator = input.closest(".postCreator");
+    if (!creator) return;
+
+    var state = ensureComposerState(inputId);
+    var hasText = String(input.value || "").trim().length > 0;
+    var hasImages = Array.isArray(state.images) && state.images.length > 0;
+    var hasFocus = document.activeElement === input;
+
+    creator.classList.toggle("active", hasText || hasImages || hasFocus);
+  }
+
   function renderComposerPreview(inputId) {
     var state = ensureComposerState(inputId);
     var preview = getEl(inputId + "_preview");
@@ -72,6 +85,7 @@ Heavenly.posts = Heavenly.posts || {};
 
     if (!state.images.length) {
       preview.style.display = "none";
+      refreshComposerState(inputId);
       return;
     }
 
@@ -101,6 +115,8 @@ Heavenly.posts = Heavenly.posts || {};
       item.appendChild(removeBtn);
       preview.appendChild(item);
     });
+
+    refreshComposerState(inputId);
   }
 
   function resetComposer(inputId) {
@@ -114,12 +130,12 @@ Heavenly.posts = Heavenly.posts || {};
 
     state.images = [];
     renderComposerPreview(inputId);
+    refreshComposerState(inputId);
   }
 
   async function addFilesToComposer(inputId, files) {
     var state = ensureComposerState(inputId);
     var list = Array.prototype.slice.call(files || []);
-    if (!list.length) return;
 
     for (var i = 0; i < list.length; i++) {
       var file = list[i];
@@ -129,8 +145,7 @@ Heavenly.posts = Heavenly.posts || {};
       }
 
       try {
-        var dataUrl = await readFileAsDataUrl(file);
-        state.images.push(dataUrl);
+        state.images.push(await readFileAsDataUrl(file));
       } catch (error) {
         console.error("Post image read failed", error);
       }
@@ -141,6 +156,7 @@ Heavenly.posts = Heavenly.posts || {};
 
   function buildComposerTools(creator, textarea, inputId, submitBtn) {
     if (creator.querySelector(".postComposerTools")) {
+      refreshComposerState(inputId);
       return;
     }
 
@@ -177,7 +193,6 @@ Heavenly.posts = Heavenly.posts || {};
 
     tools.appendChild(imageBtn);
     tools.appendChild(emojiBtn);
-
     creator.insertBefore(tools, textarea);
     creator.appendChild(hiddenImageInput);
     creator.appendChild(preview);
@@ -187,30 +202,28 @@ Heavenly.posts = Heavenly.posts || {};
     });
 
     emojiBtn.addEventListener("click", function () {
-      if (typeof window.openEmojiPicker === "function") {
-        window.openEmojiPicker(inputId, {
-          mode: "post",
-          onEmoteSelect: function (emote) {
-            if (!emote || !emote.src) return;
+      if (typeof window.openEmojiPicker !== "function") return;
 
-            var state = ensureComposerState(inputId);
-            state.images.push(emote.src);
-            renderComposerPreview(inputId);
-            focusComposer(inputId);
-          }
-        });
-      }
+      window.openEmojiPicker(inputId, {
+        mode: "post",
+        onEmoteSelect: function (emote) {
+          if (!emote || !emote.src) return;
+
+          ensureComposerState(inputId).images.push(emote.src);
+          renderComposerPreview(inputId);
+          focusComposer(inputId);
+        }
+      });
     });
 
     hiddenImageInput.addEventListener("change", async function () {
-      var files = hiddenImageInput.files;
-
-      if (files && files.length) {
-        await addFilesToComposer(inputId, files);
+      if (hiddenImageInput.files && hiddenImageInput.files.length) {
+        await addFilesToComposer(inputId, hiddenImageInput.files);
       }
 
       hiddenImageInput.value = "";
       focusComposer(inputId);
+      refreshComposerState(inputId);
     });
   }
 
@@ -221,26 +234,37 @@ Heavenly.posts = Heavenly.posts || {};
 
     textarea.dataset.heavenlyComposerBound = "1";
 
+    textarea.addEventListener("focus", function () {
+      refreshComposerState(inputId);
+    });
+
+    textarea.addEventListener("blur", function () {
+      setTimeout(function () {
+        refreshComposerState(inputId);
+      }, 60);
+    });
+
     textarea.addEventListener("input", function () {
       autoResizeTextarea(textarea);
+      refreshComposerState(inputId);
     });
 
     textarea.addEventListener("keydown", function (event) {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
+      if (event.key !== "Enter" || event.shiftKey) return;
 
-        if (inputId === "profilePostInput") {
-          if (typeof window.submitProfilePost === "function") {
-            window.submitProfilePost();
-          }
-          return;
+      event.preventDefault();
+
+      if (inputId === "profilePostInput") {
+        if (typeof window.submitProfilePost === "function") {
+          window.submitProfilePost();
         }
-
-        Heavenly.posts.create.submitPost({
-          inputId: "homePostInput",
-          feedType: "home"
-        });
+        return;
       }
+
+      Heavenly.posts.create.submitPost({
+        inputId: "homePostInput",
+        feedType: "home"
+      });
     });
 
     textarea.addEventListener("paste", async function (event) {
@@ -250,13 +274,8 @@ Heavenly.posts = Heavenly.posts || {};
       for (var i = 0; i < clipboardData.items.length; i++) {
         var item = clipboardData.items[i];
 
-        if (!item || item.kind !== "file") {
-          continue;
-        }
-
-        if (!item.type || item.type.indexOf("image/") !== 0) {
-          continue;
-        }
+        if (!item || item.kind !== "file") continue;
+        if (!item.type || item.type.indexOf("image/") !== 0) continue;
 
         var file = item.getAsFile();
         if (!file) continue;
@@ -264,21 +283,22 @@ Heavenly.posts = Heavenly.posts || {};
         event.preventDefault();
         await addFilesToComposer(inputId, [file]);
         focusComposer(inputId);
+        refreshComposerState(inputId);
         return;
       }
     });
+
+    refreshComposerState(inputId);
   }
 
   function initComposer(inputId) {
     var existingInput = getEl(inputId);
     var existingTextarea = document.querySelector("textarea#" + inputId);
-    var creator = null;
-
-    if (existingInput) {
-      creator = existingInput.closest(".postCreator");
-    } else if (existingTextarea) {
-      creator = existingTextarea.closest(".postCreator");
-    }
+    var creator = existingInput
+      ? existingInput.closest(".postCreator")
+      : existingTextarea
+        ? existingTextarea.closest(".postCreator")
+        : null;
 
     if (!creator) return;
 
@@ -306,10 +326,9 @@ Heavenly.posts = Heavenly.posts || {};
 
     buildComposerTools(creator, textarea, inputId, submitBtn);
     bindTextareaEvents(textarea, inputId);
-
     autoResizeTextarea(textarea);
     renderComposerPreview(inputId);
-
+    refreshComposerState(inputId);
     creator.dataset.heavenlyComposerReady = "1";
   }
 
@@ -317,16 +336,10 @@ Heavenly.posts = Heavenly.posts || {};
     config = config || {};
 
     var input = getEl(config.inputId);
-    if (!input) {
-      console.warn("Post input not found:", config.inputId);
-      return;
-    }
+    if (!input) return;
 
     var currentUser = getCurrentUser();
-    if (!currentUser) {
-      console.warn("No current user for posting");
-      return;
-    }
+    if (!currentUser) return;
 
     var state = ensureComposerState(config.inputId);
     var text = String(input.value || "").trim();
@@ -343,18 +356,13 @@ Heavenly.posts = Heavenly.posts || {};
       images: images
     });
 
-    if (!created) {
-      console.warn("Post was not created");
-      return;
-    }
+    if (!created) return;
 
     resetComposer(config.inputId);
 
     if (config.feedType === "profile") {
       if (Heavenly.screens && typeof Heavenly.screens.renderProfileFeed === "function") {
-        Heavenly.screens.renderProfileFeed({
-          profileOwner: config.profileOwner
-        });
+        Heavenly.screens.renderProfileFeed({ profileOwner: config.profileOwner });
       }
       return;
     }
@@ -373,7 +381,8 @@ Heavenly.posts = Heavenly.posts || {};
     submitPost: submitPost,
     initComposer: initComposer,
     initAllComposers: initAllComposers,
-    focusComposer: focusComposer
+    focusComposer: focusComposer,
+    refreshComposerState: refreshComposerState
   };
 
   document.addEventListener("DOMContentLoaded", function () {

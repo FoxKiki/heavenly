@@ -128,15 +128,99 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
   }
 
-  function readFileAsDataUrl(file, onDone) {
+  function readFileAsDataUrl(file, onDone, options) {
     if (!file) return;
+
+    options = options || {};
+
+    var maxWidth = options.maxWidth || 1280;
+    var maxHeight = options.maxHeight || 1280;
+    var outputType = options.outputType || "image/jpeg";
+    var qualitySteps = options.qualitySteps || [0.82, 0.72, 0.62, 0.52];
+    var maxDataUrlLength = options.maxDataUrlLength || 900000;
+
+    function finish(result) {
+      if (typeof onDone === "function") {
+        onDone(result);
+      }
+    }
+
+    function fallbackRead() {
+      var fallbackReader = new FileReader();
+
+      fallbackReader.onload = function (event) {
+        finish(event.target.result);
+      };
+
+      fallbackReader.onerror = function () {
+        if (typeof window.setFeedback === "function") {
+          window.setFeedback("Bild konnte nicht gelesen werden", false);
+        }
+      };
+
+      fallbackReader.readAsDataURL(file);
+    }
+
+    if (!file.type || file.type.indexOf("image/") !== 0) {
+      fallbackRead();
+      return;
+    }
 
     var reader = new FileReader();
 
     reader.onload = function (event) {
-      if (typeof onDone === "function") {
-        onDone(event.target.result);
-      }
+      var img = new Image();
+
+      img.onload = function () {
+        try {
+          var width = img.naturalWidth || img.width;
+          var height = img.naturalHeight || img.height;
+
+          if (!width || !height) {
+            finish(event.target.result);
+            return;
+          }
+
+          var scale = Math.min(maxWidth / width, maxHeight / height, 1);
+          var targetWidth = Math.max(1, Math.round(width * scale));
+          var targetHeight = Math.max(1, Math.round(height * scale));
+
+          var canvas = document.createElement("canvas");
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
+
+          var context = canvas.getContext("2d");
+          if (!context) {
+            finish(event.target.result);
+            return;
+          }
+
+          context.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+          var result = "";
+
+          for (var i = 0; i < qualitySteps.length; i++) {
+            result = canvas.toDataURL(outputType, qualitySteps[i]);
+
+            if (result.length <= maxDataUrlLength) {
+              finish(result);
+              return;
+            }
+          }
+
+          result = canvas.toDataURL(outputType, qualitySteps[qualitySteps.length - 1] || 0.5);
+          finish(result);
+        } catch (error) {
+          console.warn("image optimize failed", error);
+          finish(event.target.result);
+        }
+      };
+
+      img.onerror = function () {
+        finish(event.target.result);
+      };
+
+      img.src = event.target.result;
     };
 
     reader.onerror = function () {
@@ -180,7 +264,169 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
   function saveThemeFallback(user, theme) {
     try {
       localStorage.setItem(getThemeCacheKey(user), JSON.stringify(theme || {}));
-    } catch (error) {}
+    } catch (error) {
+      try {
+        var reducedTheme = Object.assign({}, theme || {});
+        reducedTheme.profileBg = "";
+        localStorage.setItem(getThemeCacheKey(user), JSON.stringify(reducedTheme));
+      } catch (nestedError) {}
+    }
+  }
+
+  function normalizeThemeImageUrl(value) {
+    var raw = String(value || "").trim();
+    if (!raw) return "";
+
+    if (/^data:image\//i.test(raw)) {
+      return raw;
+    }
+
+    if (/^blob:/i.test(raw)) {
+      return raw;
+    }
+
+    if (/^https?:\/\//i.test(raw)) {
+      return raw;
+    }
+
+    if (/^\/\//.test(raw)) {
+      return "https:" + raw;
+    }
+
+    if (/^(?:nui|https?):\/\//i.test(raw)) {
+      return raw;
+    }
+
+    if (/^(?:html\/)?assets\//i.test(raw) || raw.charAt(0) === "/") {
+      return raw;
+    }
+
+    return "";
+  }
+
+  function triggerFileDialog(input) {
+    if (!input) return false;
+
+    var hadHiddenAttr = input.hasAttribute("hidden");
+    var previousDisplay = input.style.display;
+    var previousPosition = input.style.position;
+    var previousLeft = input.style.left;
+    var previousTop = input.style.top;
+    var previousOpacity = input.style.opacity;
+    var previousPointerEvents = input.style.pointerEvents;
+
+    try {
+      if (hadHiddenAttr) {
+        input.removeAttribute("hidden");
+      }
+
+      input.style.display = "block";
+      input.style.position = "fixed";
+      input.style.left = "-9999px";
+      input.style.top = "0";
+      input.style.opacity = "0";
+      input.style.pointerEvents = "none";
+      input.click();
+      return true;
+    } catch (error) {
+      console.warn("file dialog open failed", error);
+      return false;
+    } finally {
+      if (hadHiddenAttr) {
+        input.setAttribute("hidden", "");
+      }
+
+      input.style.display = previousDisplay;
+      input.style.position = previousPosition;
+      input.style.left = previousLeft;
+      input.style.top = previousTop;
+      input.style.opacity = previousOpacity;
+      input.style.pointerEvents = previousPointerEvents;
+    }
+  }
+
+  function updateProfileBackgroundField(value) {
+    var hpProfileBg = getEl("hpProfileBg");
+    var hpProfileBgName = getEl("hpProfileBgName");
+    var normalizedValue = normalizeThemeImageUrl(value);
+
+    if (hpProfileBg) {
+      hpProfileBg.value = normalizedValue;
+    }
+
+    if (hpProfileBgName) {
+      hpProfileBgName.value = normalizedValue ? "Bild ausgewählt" : "Kein Bild ausgewählt";
+    }
+  }
+
+  function updateProfileEditorBackgroundField(value) {
+    var peProfileBg = getEl("peProfileBg");
+    var peProfileBgName = getEl("peProfileBgName");
+    var normalizedValue = normalizeThemeImageUrl(value);
+
+    if (peProfileBg) {
+      peProfileBg.value = normalizedValue;
+    }
+
+    if (peProfileBgName) {
+      peProfileBgName.value = normalizedValue ? "Bild ausgewählt" : "Kein Bild ausgewählt";
+    }
+  }
+
+  function initHomeProfilePopupBindings() {
+    var fileInput = getEl("hpProfileBgFile");
+    if (!fileInput || fileInput.dataset.bound === "1") return;
+
+    fileInput.dataset.bound = "1";
+
+    fileInput.addEventListener("change", function () {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+
+      readFileAsDataUrl(file, function (dataUrl) {
+        updateProfileBackgroundField(dataUrl);
+
+        if (typeof window.setFeedback === "function") {
+          window.setFeedback("Profil-Hintergrundbild ausgewählt", true);
+        }
+      }, {
+        maxWidth: 1280,
+        maxHeight: 720,
+        outputType: "image/jpeg",
+        qualitySteps: [0.78, 0.68, 0.58, 0.48],
+        maxDataUrlLength: 700000
+      });
+
+      fileInput.value = "";
+    });
+  }
+
+  function initProfileEditorPopupBindings() {
+    var fileInput = getEl("peProfileBgFile");
+    if (!fileInput || fileInput.dataset.bound === "1") return;
+
+    fileInput.dataset.bound = "1";
+
+    fileInput.addEventListener("change", function () {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+
+      readFileAsDataUrl(file, function (dataUrl) {
+        updateProfileEditorBackgroundField(dataUrl);
+
+        if (typeof window.setFeedback === "function") {
+          window.setFeedback("Profil-Hintergrundbild ausgewählt", true);
+        }
+      }, {
+        maxWidth: 1280,
+        maxHeight: 720,
+        outputType: "image/jpeg",
+        qualitySteps: [0.78, 0.68, 0.58, 0.48],
+        maxDataUrlLength: 700000
+      });
+
+      fileInput.value = "";
+    });
   }
 
   async function getProfileData(user) {
@@ -363,8 +609,8 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     }
 
     var hpHomeBg = getEl("hpHomeBg");
-    if (hpHomeBg && hpHomeBg.parentElement) {
-      hpHomeBg.parentElement.style.display = "none";
+    if (hpHomeBg) {
+      hpHomeBg.style.display = "none";
     }
 
     var hpProfileBg = getEl("hpProfileBg");
@@ -723,7 +969,7 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     var profileBoxColor = viewedTheme.boxColor || "#8b5cf6";
     var profilePanelColor = viewedTheme.panelColor || "#4b0010";
     var profileTextColor = viewedTheme.textColor || "#ffffff";
-    var profileBg = viewedTheme.profileBg || "";
+    var profileBg = normalizeThemeImageUrl(viewedTheme.profileBg || "");
 
     var profileBorderColor = hexToRgba(profileBoxColor, 0.75);
     var profileBoxBg = hexToRgba(profilePanelColor, 0.72);
@@ -880,6 +1126,7 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
   function initProfileUploads() {
     var avatarInput = getEl("avatarUploadInput");
     var coverInput = getEl("coverUploadInput");
+    var profileBgInput = getEl("profileBgUploadInput");
 
     if (avatarInput && !avatarInput.dataset.bound) {
       avatarInput.dataset.bound = "1";
@@ -897,6 +1144,12 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
           if (typeof window.setFeedback === "function") {
             window.setFeedback("Profilbild aktualisiert", true);
           }
+        }, {
+          maxWidth: 320,
+          maxHeight: 320,
+          outputType: "image/jpeg",
+          qualitySteps: [0.8, 0.7, 0.6, 0.5],
+          maxDataUrlLength: 180000
         });
 
         avatarInput.value = "";
@@ -919,9 +1172,47 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
           if (typeof window.setFeedback === "function") {
             window.setFeedback("Titelbild aktualisiert", true);
           }
+        }, {
+          maxWidth: 1280,
+          maxHeight: 720,
+          outputType: "image/jpeg",
+          qualitySteps: [0.8, 0.7, 0.6, 0.5],
+          maxDataUrlLength: 650000
         });
 
         coverInput.value = "";
+      });
+    }
+
+    if (profileBgInput && !profileBgInput.dataset.bound) {
+      profileBgInput.dataset.bound = "1";
+
+      profileBgInput.addEventListener("change", function () {
+        var user = getCurrentUser();
+        var file = profileBgInput.files && profileBgInput.files[0];
+
+        if (!user || !file) return;
+
+        readFileAsDataUrl(file, async function (dataUrl) {
+          var theme = await getThemeSettings(user);
+
+          await setThemeSettings(user, Object.assign({}, theme || {}, {
+            profileBg: dataUrl
+          }));
+          await applyProfileImages();
+
+          if (typeof window.setFeedback === "function") {
+            window.setFeedback("Profil-Hintergrund aktualisiert", true);
+          }
+        }, {
+          maxWidth: 1280,
+          maxHeight: 720,
+          outputType: "image/jpeg",
+          qualitySteps: [0.78, 0.68, 0.58, 0.48],
+          maxDataUrlLength: 700000
+        });
+
+        profileBgInput.value = "";
       });
     }
   }
@@ -1093,6 +1384,13 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     }
   }
 
+  function closeProfileEditorPopup() {
+    var popup = getEl("profileEditorPopup");
+    if (popup) {
+      popup.classList.remove("active");
+    }
+  }
+
   function closeForeignProfileMenu() {
     var menu = getEl("foreignProfileMenu");
     if (menu) {
@@ -1102,7 +1400,10 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
 
   function updateProfileActionVisibility() {
     var ownSettingsBtn = getEl("profileSettingsBtn");
-    var ownDmBtn = getEl("profileDmBtn");
+    var quickActions = getEl("profileQuickActions");
+    var infoActions = document.querySelector(".profileInfoActions");
+    var sidebarActions = getEl("profileSidebarActions");
+    var sidebarBlocklistBtn = getEl("profileSidebarBlocklistBtn");
     var foreignActionsBox = getEl("foreignProfileActionsBox");
     var profilePostCreator = getEl("profilePostCreator");
 
@@ -1110,11 +1411,23 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
 
     if (ownSettingsBtn) {
       ownSettingsBtn.style.display = isOwnProfile() ? "block" : "none";
+      ownSettingsBtn.innerText = "Profil bearbeiten";
     }
 
-    if (ownDmBtn) {
-      ownDmBtn.innerText = isOwnProfile() ? "Öffnen" : "Nachricht";
-      ownDmBtn.style.display = "inline-flex";
+    if (quickActions) {
+      quickActions.style.display = isOwnProfile() ? "grid" : "none";
+    }
+
+    if (infoActions) {
+      infoActions.style.display = isOwnProfile() ? "none" : "none";
+    }
+
+    if (sidebarActions) {
+      sidebarActions.style.display = isOwnProfile() ? "flex" : "none";
+    }
+
+    if (sidebarBlocklistBtn) {
+      sidebarBlocklistBtn.style.display = isOwnProfile() ? "flex" : "none";
     }
 
     if (foreignActionsBox) {
@@ -1139,17 +1452,70 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     var hpTextColor = getEl("hpTextColor");
     var hpFontFamily = getEl("hpFontFamily");
     var hpHomeBg = getEl("hpHomeBg");
-    var hpProfileBg = getEl("hpProfileBg");
     var popup = getEl("homeProfilePopup");
 
     applyProfilePopupLabels();
+    initHomeProfilePopupBindings();
 
     if (hpBoxColor) hpBoxColor.value = theme.boxColor || "#8b5cf6";
     if (hpPanelColor) hpPanelColor.value = theme.panelColor || "#4b0010";
     if (hpTextColor) hpTextColor.value = theme.textColor || "#ffffff";
     if (hpFontFamily) hpFontFamily.value = theme.fontFamily || "Arial, sans-serif";
     if (hpHomeBg) hpHomeBg.value = "";
-    if (hpProfileBg) hpProfileBg.value = theme.profileBg || "";
+    updateProfileBackgroundField(theme.profileBg || "");
+
+    if (popup) {
+      popup.classList.add("active");
+    }
+  }
+
+  async function openProfileEditorPopup() {
+    var user = getCurrentUser();
+    if (!user) return;
+
+    var settings = await getUserSettings(user);
+    var theme = await getThemeSettings(user);
+    var relationship = getRelationshipData(settings);
+    var info = getInfoBoxData(settings);
+    var popup = getEl("profileEditorPopup");
+
+    initProfileEditorPopupBindings();
+
+    var statusInput = getEl("peStatusInput");
+    var profileFeedTitle = getEl("peProfileFeedTitle");
+    var about = getEl("peAbout");
+    var relationshipStatus = getEl("peRelationshipStatus");
+    var relationshipPartner = getEl("peRelationshipPartner");
+    var birthday = getEl("peBirthday");
+    var job = getEl("peJob");
+    var profileVisibility = getEl("peProfileVisibility");
+    var boxColor = getEl("peBoxColor");
+    var panelColor = getEl("pePanelColor");
+    var textColor = getEl("peTextColor");
+    var fontFamily = getEl("peFontFamily");
+    var editorSections = popup ? popup.querySelectorAll(".profileEditorSection") : [];
+    var editorBgField = getEl("peProfileBgName");
+
+    if (editorSections && editorSections[0]) {
+      editorSections[0].style.display = "none";
+    }
+
+    if (editorBgField && editorBgField.parentElement) {
+      editorBgField.parentElement.style.display = "none";
+    }
+
+    if (statusInput) statusInput.value = settings.status || "";
+    if (profileFeedTitle) profileFeedTitle.value = settings.profileFeedTitle || "";
+    if (about) about.value = info.about || "";
+    if (relationshipStatus) relationshipStatus.value = relationship.status || "";
+    if (relationshipPartner) relationshipPartner.value = relationship.partner || "";
+    if (birthday) birthday.value = info.birthday || "";
+    if (job) job.value = info.job || "";
+    if (profileVisibility) profileVisibility.value = settings.profileVisibility || "public";
+    if (boxColor) boxColor.value = theme.boxColor || "#8b5cf6";
+    if (panelColor) panelColor.value = theme.panelColor || "#4b0010";
+    if (textColor) textColor.value = theme.textColor || "#ffffff";
+    if (fontFamily) fontFamily.value = theme.fontFamily || "Arial, sans-serif";
 
     if (popup) {
       popup.classList.add("active");
@@ -1196,13 +1562,18 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     var user = getCurrentUser();
     if (!user) return;
 
+    var rawProfileBg = getEl("hpProfileBg") ? getEl("hpProfileBg").value.trim() : "";
+    var normalizedProfileBg = normalizeThemeImageUrl(rawProfileBg);
+
+    updateProfileBackgroundField(normalizedProfileBg);
+
     var theme = {
       boxColor: getEl("hpBoxColor") ? getEl("hpBoxColor").value : "#8b5cf6",
       panelColor: getEl("hpPanelColor") ? getEl("hpPanelColor").value : "#4b0010",
       textColor: getEl("hpTextColor") ? getEl("hpTextColor").value : "#ffffff",
       fontFamily: getEl("hpFontFamily") ? getEl("hpFontFamily").value : "Arial, sans-serif",
       homeBg: "",
-      profileBg: getEl("hpProfileBg") ? getEl("hpProfileBg").value.trim() : ""
+      profileBg: normalizedProfileBg
     };
 
     await setThemeSettings(user, theme);
@@ -1210,7 +1581,66 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     closeHomeProfilePopup();
 
     if (typeof window.setFeedback === "function") {
-      window.setFeedback("Profil-Design gespeichert", true);
+      window.setFeedback(
+        normalizedProfileBg || !rawProfileBg
+          ? "Profil-Design gespeichert"
+          : "Hintergrundbild benötigt eine vollständige Bild-URL",
+        !!(normalizedProfileBg || !rawProfileBg)
+      );
+    }
+  }
+
+  async function saveProfileEditorSettings() {
+    var user = getCurrentUser();
+    if (!user || !Heavenly.storage) return;
+    var existingTheme = await getThemeSettings(user);
+
+    var settings = Heavenly.storage.getSettings(user) || {};
+    settings.relationship = {
+      status: getEl("peRelationshipStatus") ? getEl("peRelationshipStatus").value : "",
+      partner: getEl("peRelationshipPartner") ? getEl("peRelationshipPartner").value.trim() : ""
+    };
+    settings.birthday = getEl("peBirthday") ? getEl("peBirthday").value.trim() : "";
+    settings.job = getEl("peJob") ? getEl("peJob").value.trim() : "";
+    settings.about = getEl("peAbout") ? getEl("peAbout").value.trim() : "";
+    settings.profileFeedTitle = getEl("peProfileFeedTitle")
+      ? getEl("peProfileFeedTitle").value.trim()
+      : "";
+    settings.profileVisibility = getEl("peProfileVisibility")
+      ? getEl("peProfileVisibility").value
+      : "public";
+
+    Heavenly.storage.setSettings(user, settings);
+
+    var profileKey = getProfileCacheKey(user);
+    if (Heavenly.cache.profiles[profileKey] && Heavenly.cache.profiles[profileKey].settings) {
+      Heavenly.cache.profiles[profileKey].settings = Object.assign(
+        {},
+        Heavenly.cache.profiles[profileKey].settings,
+        settings
+      );
+    }
+
+    var normalizedProfileBg = normalizeThemeImageUrl(
+      existingTheme && existingTheme.profileBg ? existingTheme.profileBg : ""
+    );
+
+    var theme = {
+      boxColor: getEl("peBoxColor") ? getEl("peBoxColor").value : "#8b5cf6",
+      panelColor: getEl("pePanelColor") ? getEl("pePanelColor").value : "#4b0010",
+      textColor: getEl("peTextColor") ? getEl("peTextColor").value : "#ffffff",
+      fontFamily: getEl("peFontFamily") ? getEl("peFontFamily").value : "Arial, sans-serif",
+      homeBg: "",
+      profileBg: normalizedProfileBg
+    };
+
+    await saveStatusText(user, getEl("peStatusInput") ? getEl("peStatusInput").value.trim() : "");
+    await setThemeSettings(user, theme);
+    await applyProfileImages();
+    closeProfileEditorPopup();
+
+    if (typeof window.setFeedback === "function") {
+      window.setFeedback("Profil gespeichert", true);
     }
   }
 
@@ -1232,6 +1662,24 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
 
     if (typeof window.setFeedback === "function") {
       window.setFeedback("Profil-Design zurückgesetzt", true);
+    }
+  }
+
+  function resetProfileEditorDesign() {
+    var boxColor = getEl("peBoxColor");
+    var panelColor = getEl("pePanelColor");
+    var textColor = getEl("peTextColor");
+    var fontFamily = getEl("peFontFamily");
+
+    if (boxColor) boxColor.value = "#8b5cf6";
+    if (panelColor) panelColor.value = "#4b0010";
+    if (textColor) textColor.value = "#ffffff";
+    if (fontFamily) fontFamily.value = "Arial, sans-serif";
+
+    updateProfileEditorBackgroundField("");
+
+    if (typeof window.setFeedback === "function") {
+      window.setFeedback("Design im Editor zurückgesetzt", true);
     }
   }
 
@@ -1261,6 +1709,7 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     closeImageViewer();
     closeStatusPopup();
     closeHomeProfilePopup();
+    closeProfileEditorPopup();
     closeInfoBoxPopupSafe();
     closeBlocklistPopup();
 
@@ -1376,17 +1825,21 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
   window.closeProfileMenu = closeProfileMenu;
   window.closeStatusPopup = closeStatusPopup;
   window.closeHomeProfilePopup = closeHomeProfilePopup;
+  window.closeProfileEditorPopup = closeProfileEditorPopup;
   window.closeDeleteAccountPopup = closeDeleteAccountPopup;
   window.closeInfoBoxPopup = closeInfoBoxPopup;
   window.saveStatus = saveStatus;
   window.saveHomeProfileSettings = saveHomeProfileSettings;
+  window.saveProfileEditorSettings = saveProfileEditorSettings;
   window.resetHomeProfileSettings = resetHomeProfileSettings;
+  window.resetProfileEditorDesign = resetProfileEditorDesign;
   window.openImageViewer = openImageViewer;
   window.closeImageViewer = closeImageViewer;
   window.confirmDeleteAccount = confirmDeleteAccount;
   window.removeFriendFromViewedUser = removeFriendFromViewedUser;
   window.openRelationshipPartnerProfile = openRelationshipPartnerProfile;
   window.openInfoBoxPopup = openInfoBoxPopup;
+  window.openProfileEditorPopup = openProfileEditorPopup;
   window.saveInfoBoxSettings = saveInfoBoxSettings;
   window.canCurrentUserViewProfilePosts = canCurrentUserViewProfilePosts;
 
@@ -1437,6 +1890,7 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     closeImageViewer();
     closeStatusPopup();
     closeHomeProfilePopup();
+    closeProfileEditorPopup();
     closeInfoBoxPopupSafe();
     closeDeleteAccountPopup();
     closeBlocklistPopup();
@@ -1469,6 +1923,44 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     menu.classList.toggle("open");
   };
 
+  window.chooseProfileBackgroundFile = function () {
+    initHomeProfilePopupBindings();
+
+    var fileInput = getEl("hpProfileBgFile");
+    if (!fileInput) return;
+
+    if (!triggerFileDialog(fileInput) && typeof window.setFeedback === "function") {
+      window.setFeedback("Hintergrundbild-Auswahl konnte nicht geöffnet werden", false);
+    }
+  };
+
+  window.clearProfileBackgroundFile = function () {
+    updateProfileBackgroundField("");
+
+    if (typeof window.setFeedback === "function") {
+      window.setFeedback("Profil-Hintergrundbild entfernt", true);
+    }
+  };
+
+  window.chooseProfileEditorBackgroundFile = function () {
+    initProfileEditorPopupBindings();
+
+    var fileInput = getEl("peProfileBgFile");
+    if (!fileInput) return;
+
+    if (!triggerFileDialog(fileInput) && typeof window.setFeedback === "function") {
+      window.setFeedback("Hintergrundbild-Auswahl konnte nicht geöffnet werden", false);
+    }
+  };
+
+  window.clearProfileEditorBackgroundFile = function () {
+    updateProfileEditorBackgroundField("");
+
+    if (typeof window.setFeedback === "function") {
+      window.setFeedback("Profil-Hintergrundbild entfernt", true);
+    }
+  };
+
   window.openProfileSection = async function (section) {
     closeProfileMenu();
 
@@ -1476,34 +1968,49 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
     var coverInput = getEl("coverUploadInput");
 
     if (section === "homeProfile") {
-      await openHomeProfilePopup();
+      await openProfileEditorPopup();
       return;
     }
 
     if (section === "avatar") {
       if (avatarInput && isOwnProfile()) {
-        avatarInput.click();
+        if (!triggerFileDialog(avatarInput) && typeof window.setFeedback === "function") {
+          window.setFeedback("Profilbild-Auswahl konnte nicht geöffnet werden", false);
+        }
       }
       return;
     }
 
     if (section === "cover") {
       if (coverInput && isOwnProfile()) {
-        coverInput.click();
+        if (!triggerFileDialog(coverInput) && typeof window.setFeedback === "function") {
+          window.setFeedback("Titelbild-Auswahl konnte nicht geöffnet werden", false);
+        }
+      }
+      return;
+    }
+
+    if (section === "profileBg") {
+      var profileBgInput = getEl("profileBgUploadInput");
+
+      if (profileBgInput && isOwnProfile()) {
+        if (!triggerFileDialog(profileBgInput) && typeof window.setFeedback === "function") {
+          window.setFeedback("Hintergrundbild-Auswahl konnte nicht geöffnet werden", false);
+        }
       }
       return;
     }
 
     if (section === "status") {
       if (isOwnProfile()) {
-        await openStatusPopup();
+        await openProfileEditorPopup();
       }
       return;
     }
 
     if (section === "infoBox") {
       if (isOwnProfile()) {
-        await openInfoBoxPopup();
+        await openProfileEditorPopup();
       }
       return;
     }
@@ -1633,11 +2140,13 @@ Heavenly.cache.friends = Heavenly.cache.friends || {};
   });
 
   document.addEventListener("DOMContentLoaded", function () {
+    initHomeProfilePopupBindings();
     applyProfilePopupLabels();
     syncProfileClockMirror();
   });
 
   setTimeout(function () {
+    initHomeProfilePopupBindings();
     applyProfilePopupLabels();
     syncProfileClockMirror();
   }, 0);

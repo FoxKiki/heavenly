@@ -61,10 +61,14 @@ select{
   width:100%;
   height:100%;
   object-fit:contain;
-  opacity:0.16;
+  opacity:0.34;
   pointer-events:none;
   z-index:-2;
   animation:logoFloat 8s ease-in-out infinite;
+  filter:
+    drop-shadow(0 0 28px rgba(139,92,246,0.34))
+    drop-shadow(0 0 56px rgba(52,197,241,0.22))
+    brightness(1.12);
 }
 
 @keyframes logoFloat{
@@ -188,7 +192,7 @@ select{
   display:flex;
   flex-direction:column;
   min-height:0;
-  padding:18px;
+  padding:12px 18px 18px;
   border-radius:28px;
   background:linear-gradient(180deg, rgba(10,13,20,0.96), rgba(8,11,18,0.96));
   border:1px solid var(--border);
@@ -196,15 +200,15 @@ select{
 }
 
 .sidebarTop{
-  margin-bottom:18px;
+  margin-bottom:14px;
 }
 
 .sidebarLogo{
   display:flex;
-  align-items:center;
-  gap:10px;
-  min-height:42px;
-  padding:0 4px;
+  align-items:flex-start;
+  justify-content:center;
+  padding:12px 6px 8px;
+  min-height:64px;
 }
 
 .sidebarLogoDot{
@@ -232,6 +236,38 @@ select{
 .sidebarBottom{
   margin-top:auto;
   padding-top:18px;
+}
+
+.profileSidebarActions{
+  display:none;
+  flex-direction:column;
+  gap:10px;
+  margin-top:16px;
+  padding-top:16px;
+  border-top:1px solid rgba(255,255,255,0.08);
+}
+
+.profileSidebarSectionTitle{
+  padding:0 6px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,0.48);
+}
+
+.profileSidebarActionBtn{
+  min-height:42px;
+}
+
+.profileSidebarQuickGrid{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+#profileSidebarBlocklistBtn{
+  display:none;
 }
 
 .sidebarNavBtn{
@@ -490,6 +526,11 @@ select{
 
 .requestDot.active{
   display:block;
+}
+
+#homeScreen #friendRequestBtn,
+#homeScreen .appTopbarRight > .dmBtn{
+  display:none !important;
 }
 
 .fortuneBox{
@@ -1082,6 +1123,12 @@ select{
   margin-top:18px;
 }
 
+.profileQuickActions{
+  display:none;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:10px;
+}
+
 .profileInfoBtn{
   width:100%;
   padding:11px 14px;
@@ -1118,6 +1165,10 @@ select{
 
 .profileSettingsWrap{
   position:relative;
+}
+
+#profileMenu{
+  display:none !important;
 }
 
 .foreignProfileActionsBox{
@@ -1364,6 +1415,32 @@ select{
   flex-direction:column;
   gap:12px;
   margin-top:18px;
+}
+
+.profileEditorSection{
+  margin-bottom:18px;
+  padding:16px;
+  border-radius:18px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+}
+
+.profileEditorSectionTitle{
+  margin-bottom:12px;
+  color:rgb(52,197,241);
+  font-size:15px;
+  font-weight:700;
+}
+
+.hpInlineActionsWide{
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+}
+
+.profileEditorDangerZone{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:8px;
 }
 
 .hpActions button{
@@ -1805,15 +1882,27 @@ select{
   margin-bottom:10px;
 }
 
-.dmToolBtn{
-  min-width:42px;
-  height:38px;
+.dmToolBtn,
+.postComposerTools button,
+.postCommentTools button{
+  min-width:38px;
+  height:36px;
   padding:0 10px;
   border:none;
-  border-radius:12px;
+  border-radius:10px;
   cursor:pointer;
-  background:rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.08);
   color:white;
+  transition:background 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.dmToolBtn:hover,
+.postComposerTools button:hover,
+.postCommentTools button:hover{
+  background:rgba(255,255,255,0.10);
+  border-color:rgba(255,255,255,0.12);
+  transform:translateY(-1px);
 }
 
 .dmComposerRow{
@@ -2140,12 +2229,32 @@ select{
   font-weight:700;
 }
 
-.postComposerTools{
+.postComposerTools,
+.postCommentTools{
   display:flex;
   gap:8px;
   align-items:center;
+
+  opacity:0;
+  max-height:0;
+  overflow:hidden;
+  pointer-events:none;
+  transform:translateY(-6px);
+  transition:
+    opacity 0.18s ease,
+    max-height 0.18s ease,
+    transform 0.18s ease;
 }
 
+.postCreator.active .postComposerTools,
+.postCreator:focus-within .postComposerTools,
+.postCommentComposer.active .postCommentTools,
+.postCommentComposer:focus-within .postCommentTools{
+  opacity:1;
+  max-height:60px;
+  pointer-events:auto;
+  transform:translateY(0);
+}
 .postComposerInput{
   width:100%;
   min-height:46px;
@@ -2887,4 +2996,40 @@ select{
 
 body.hasOverlayOpen{
   overflow:hidden;
+}
+
+.sidebarLogo{
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:12px 6px 8px;
+  min-height:64px;
+}
+
+.sidebarLogoImg{
+  height:250px;
+  width:auto;
+  object-fit:contain;
+  filter:
+    drop-shadow(0 0 18px rgba(139,92,246,0.45))
+    drop-shadow(0 0 28px rgba(52,197,241,0.30));
+  opacity:0.95;
+}
+
+.sidebarLogoImg:hover{
+  transform:none;
+  filter:
+    drop-shadow(0 0 18px rgba(139,92,246,0.45))
+    drop-shadow(0 0 28px rgba(52,197,241,0.30));
+}
+
+.hpInlineActions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.hpInlineActions button{
+  flex:1 1 180px;
+  margin-top:0 !important;
 }
